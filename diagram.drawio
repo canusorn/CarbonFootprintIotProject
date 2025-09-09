@@ -1,0 +1,112 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36" version="28.2.0">
+  <diagram name="Page-1" id="YgT-xzTdEhmAbiKJIax1">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ygLLFD09rIhyYjH4xafM-17" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="480" width="640" height="370" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-10" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="270" width="600" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-8" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="70" width="600" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-1" target="ygLLFD09rIhyYjH4xafM-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-1" value="Web Aplication" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-2" target="ygLLFD09rIhyYjH4xafM-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-2" value="Register with email" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-4" value="Save to database" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-6" target="ygLLFD09rIhyYjH4xafM-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-6" value="add email to ESP32" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-9" value="Register user" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="80" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-11" value="ESP32 sensor" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="280" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-12" target="ygLLFD09rIhyYjH4xafM-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-12" value="Read from sensor" style="whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-14" value="save to mysql database with email" style="whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="330" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-16" value="MQTT" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="460" y="330" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-24" value="device 1&lt;div&gt;-read sensor&lt;/div&gt;&lt;div&gt;-control&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="770" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-25" value="device 2&lt;div&gt;-read sensor&lt;/div&gt;&lt;div&gt;-control&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="250" y="770" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-26" value="device 3&lt;div&gt;-read sensor&lt;/div&gt;&lt;div&gt;-control&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="770" width="80" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-18" target="ygLLFD09rIhyYjH4xafM-26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-18" target="ygLLFD09rIhyYjH4xafM-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-18" target="ygLLFD09rIhyYjH4xafM-24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-23" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="150" y="535" width="280" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-18" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry y="-40" width="280" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-20" value="Mysql database" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry x="20" y="25" width="70" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-21" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry x="100" y="-30" width="170" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-19" value="Aedes mqtt broker" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry x="122.5" y="55" width="125" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-38" value="webserver" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry x="122.5" y="15" width="125" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-22" value="Raspberry pi" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry x="1.25" y="-25" width="87.5" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-30" value="Nodejs" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="ygLLFD09rIhyYjH4xafM-23">
+          <mxGeometry x="130" y="-25" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-41" value="Web brower&lt;div&gt;dashboard vue js&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="570" y="540" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ygLLFD09rIhyYjH4xafM-18" target="ygLLFD09rIhyYjH4xafM-41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-43" value="MQTT" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="290" y="660" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ygLLFD09rIhyYjH4xafM-44" value="HTTP,&lt;div&gt;&lt;br&gt;&lt;div&gt;Websocket&lt;/div&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="460" y="545" width="60" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
