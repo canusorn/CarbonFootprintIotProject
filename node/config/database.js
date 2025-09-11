@@ -1,6 +1,6 @@
 const mysql = require('mysql2/promise');
 
-// Database configuration
+// Main database configuration (for users, auth, etc.)
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -11,18 +11,31 @@ const dbConfig = {
   queueLimit: 0
 };
 
-// Create connection pool
+// Sensor database configuration (for time series sensor data)
+const sensorDbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: 'sensor',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
+
+// Create connection pools
 const pool = mysql.createPool(dbConfig);
+const sensorPool = mysql.createPool(sensorDbConfig);
 
 // Initialize database and create tables
 const initializeDatabase = async () => {
   try {
-    console.log('🔄 Initializing MySQL database...');
+    console.log('🔄 Initializing MySQL databases...');
     console.log(`📍 Connecting to MySQL at ${dbConfig.host}:3306`);
-    console.log(`📊 Database: ${dbConfig.database}`);
+    console.log(`📊 Main Database: ${dbConfig.database}`);
+    console.log(`📊 Sensor Database: ${sensorDbConfig.database}`);
     console.log(`👤 User: ${dbConfig.user}`);
     
-    // Create database if it doesn't exist
+    // Create databases if they don't exist
     const connection = await mysql.createConnection({
       host: dbConfig.host,
       user: dbConfig.user,
@@ -30,9 +43,10 @@ const initializeDatabase = async () => {
     });
     
     await connection.execute(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
+    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${sensorDbConfig.database}`);
     await connection.end();
     
-    // Create users table if it doesn't exist
+    // Create users table in main database
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,7 +57,7 @@ const initializeDatabase = async () => {
       )
     `);
     
-    console.log('✅ Database initialized successfully');
+    console.log('✅ Databases initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization failed:', error.message);
     console.error('\n📋 MySQL Setup Instructions:');
@@ -54,7 +68,8 @@ const initializeDatabase = async () => {
     console.error('\n🔧 Current configuration:');
     console.error(`   Host: ${dbConfig.host}`);
     console.error(`   User: ${dbConfig.user}`);
-    console.error(`   Database: ${dbConfig.database}`);
+    console.error(`   Main Database: ${dbConfig.database}`);
+    console.error(`   Sensor Database: ${sensorDbConfig.database}`);
     console.error(`   Password: ${dbConfig.password ? '[SET]' : '[NOT SET]'}`);
     throw error;
   }
@@ -62,5 +77,6 @@ const initializeDatabase = async () => {
 
 module.exports = {
   pool,
+  sensorPool,
   initializeDatabase
 };
