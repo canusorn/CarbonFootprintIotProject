@@ -50,11 +50,13 @@
 
 <script>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 export default {
   name: 'RegisterForm',
   setup() {
+    const router = useRouter()
     const email = ref('')
     const password = ref('')
     const confirmPassword = ref('')
@@ -87,9 +89,9 @@ export default {
         // Show success message
         success.value = 'Registration successful!'
         
-        // Refresh the page after a short delay
+        // Redirect to devices page after a short delay
         setTimeout(() => {
-          window.location.reload()
+          router.push('/devices')
         }, 1500)
       } catch (err) {
         if (err.response && err.response.data) {

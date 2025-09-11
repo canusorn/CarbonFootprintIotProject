@@ -156,6 +156,27 @@ class DeviceService {
     }
   }
 
+  async getDevicesByUsername(username) {
+    try {
+      console.log(`🔄 Retrieving devices for username: ${username}`);
+      
+      if (!this.connection) {
+        throw new Error('Device service not initialized');
+      }
+      
+      const selectQuery = 'SELECT * FROM device WHERE username = ? ORDER BY updated_at DESC';
+      const [rows] = await this.connection.execute(selectQuery, [username]);
+      
+      console.log(`✅ Retrieved ${rows.length} devices for username: ${username}`);
+      return rows;
+      
+    } catch (error) {
+      console.error(`❌ Failed to retrieve devices for username: ${username}`);
+      console.error(`   Error: ${error.message}`);
+      throw error;
+    }
+  }
+
   async saveEspDevice(espId, name, username) {
     try {
       console.log(`🔄 Saving ESP device: ${espId}`);
@@ -178,11 +199,10 @@ class DeviceService {
   }
 
   async close() {
-    if (this.connection) {
-      await this.connection.end();
-      this.connection = null;
-      console.log('Device service: Database connection pool closed');
-    }
+    // Don't close the shared pool, just reset the reference
+    // The pool is managed by the database configuration
+    this.connection = null;
+    console.log('Device service: Connection reference cleared');
   }
 }
 

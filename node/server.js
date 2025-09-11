@@ -197,14 +197,34 @@ aedes.on('subscribe', (subscriptions, client) => {
 // Import device routes factory
 const createDeviceRoutes = require('./routes/devices');
 
-// Create device routes
-const deviceRoutes = createDeviceRoutes();
+// Create device routes (will be initialized after services are ready)
+let deviceRoutes = null;
 
-// API Routes
-app.get('/api/devices', deviceRoutes.getAllDevices);
-app.get('/api/devices/:id', deviceRoutes.getDeviceById);
-app.put('/api/devices/:id', deviceRoutes.updateDevice);
-app.get('/api/sensor-data', deviceRoutes.getSensorData);
+// Device routes - these will be set up after services are initialized
+app.get('/api/devices', (req, res) => {
+  if (deviceRoutes && deviceRoutes.getAllDevices) {
+    return deviceRoutes.getAllDevices(req, res);
+  }
+  res.status(503).json({ error: 'Device service not available' });
+});
+app.get('/api/devices/:id', (req, res) => {
+  if (deviceRoutes && deviceRoutes.getDeviceById) {
+    return deviceRoutes.getDeviceById(req, res);
+  }
+  res.status(503).json({ error: 'Device service not available' });
+});
+app.put('/api/devices/:id', (req, res) => {
+  if (deviceRoutes && deviceRoutes.updateDevice) {
+    return deviceRoutes.updateDevice(req, res);
+  }
+  res.status(503).json({ error: 'Device service not available' });
+});
+app.get('/api/sensor-data', (req, res) => {
+  if (deviceRoutes && deviceRoutes.getSensorData) {
+    return deviceRoutes.getSensorData(req, res);
+  }
+  res.status(503).json({ error: 'Sensor service not available' });
+});
 
 // Initialize database and start servers
 const startServer = async () => {
@@ -233,6 +253,10 @@ const startServer = async () => {
       console.error('⚠️  Device service initialization failed:', deviceError.message);
       deviceService = null;
     }
+
+    // Initialize device routes with the service instances
+    deviceRoutes = createDeviceRoutes(deviceService, sensorService);
+    console.log('✅ Device routes initialized with service instances');
 
   } catch (error) {
     console.error('⚠️  Starting server without MySQL database');

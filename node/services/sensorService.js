@@ -194,11 +194,10 @@ class SensorService {
   }
 
   async close() {
-    if (this.connection) {
-      await this.connection.end();
-      this.connection = null;
-      console.log('Sensor database connection pool closed');
-    }
+    // Don't close the shared pool, just reset the reference
+    // The pool is managed by the database configuration
+    this.connection = null;
+    console.log('Sensor service: Connection reference cleared');
   }
 }
 

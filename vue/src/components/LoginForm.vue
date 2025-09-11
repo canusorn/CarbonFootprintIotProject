@@ -36,11 +36,13 @@
 
 <script>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 export default {
   name: 'LoginForm',
   setup() {
+    const router = useRouter()
     const email = ref('')
     const password = ref('')
     const error = ref('')
@@ -60,8 +62,8 @@ export default {
         localStorage.setItem('token', response.data.token)
         localStorage.setItem('user', JSON.stringify(response.data.user))
         
-        // Refresh the page to update authentication state
-        window.location.reload()
+        // Redirect to devices page
+        router.push('/devices')
       } catch (err) {
         if (err.response && err.response.data) {
           error.value = err.response.data.error || 'Login failed'
