@@ -24,6 +24,12 @@ app.use((req, res, next) => {
   }
 });
 
+// Import routes
+const authRoutes = require('./routes/auth');
+
+// Use routes
+app.use('/api/auth', authRoutes);
+
 // In-memory storage for demo purposes
 let devices = [];
 let sensorData = [];
