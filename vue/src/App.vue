@@ -1,6 +1,6 @@
 <template>
   <header>
-    <h1 class="app-title">Carbon Footprint IoT Project</h1>
+    <h1 class="app-title">Realtime Energy Consumption and CO2 Emission</h1>
   </header>
   
   <main>

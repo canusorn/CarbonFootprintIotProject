@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1>Carbon Footprint IoT Project</h1>
+    <h1>Realtime Energy Consumption and CO2 Emission</h1>
     <div v-if="!isAuthenticated" class="auth-container">
       <div class="auth-tabs">
         <button 
