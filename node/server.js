@@ -1,7 +1,11 @@
+// Load environment variables
+require('dotenv').config();
+
 const express = require('express');
 const aedes = require('aedes')();
 const net = require('net');
 const http = require('http');
+const { initializeDatabase } = require('./config/database');
 
 // Create Express app
 const app = express();
@@ -118,35 +122,66 @@ app.get('/api/sensor-data', (req, res) => {
   res.json(limitedData);
 });
 
-// Start HTTP server
-const httpServer = http.createServer(app);
-httpServer.listen(port, () => {
-  console.log(`🚀 API Server running on port ${port}`);
-  console.log(`📊 Health check: http://localhost:${port}/health`);
-  console.log(`📡 API Base URL: http://localhost:${port}/api`);
-});
+// Initialize database and start servers
+const startServer = async () => {
+  let databaseConnected = false;
+  
+  try {
+    // Try to initialize database
+    await initializeDatabase();
+    databaseConnected = true;
+  } catch (error) {
+    console.error('⚠️  Starting server without MySQL database');
+    console.error('⚠️  Authentication will not work until MySQL is configured');
+    console.error('⚠️  Please follow the setup instructions above to enable database features\n');
+  }
+  
+  try {
+    // Start HTTP server
+    const httpServer = http.createServer(app);
+    httpServer.listen(port, () => {
+      console.log(`🚀 API Server running on port ${port}`);
+      console.log(`📊 Health check: http://localhost:${port}/health`);
+      console.log(`📡 API Base URL: http://localhost:${port}/api`);
+      if (databaseConnected) {
+        console.log(`✅ MySQL database connected and ready`);
+      } else {
+        console.log(`⚠️  MySQL database not connected - authentication disabled`);
+      }
+    });
+    
+    // Start MQTT broker
+    const mqttServer = net.createServer(aedes.handle);
+    mqttServer.listen(mqttPort, () => {
+      console.log(`🔌 MQTT Broker running on port ${mqttPort}`);
+      console.log(`📱 MQTT Connection: mqtt://localhost:${mqttPort}`);
+    });
+    
+    // Graceful shutdown
+    process.on('SIGINT', () => {
+      console.log('\n🛑 Shutting down servers...');
+      httpServer.close(() => {
+        console.log('HTTP server closed');
+      });
+      mqttServer.close(() => {
+        console.log('MQTT server closed');
+      });
+      aedes.close(() => {
+        console.log('Aedes broker closed');
+        process.exit(0);
+      });
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+};
 
-// Start MQTT broker
-const mqttServer = net.createServer(aedes.handle);
-mqttServer.listen(mqttPort, () => {
-  console.log(`🔌 MQTT Broker running on port ${mqttPort}`);
-  console.log(`📱 MQTT Connection: mqtt://localhost:${mqttPort}`);
-});
+// Start the server
+startServer();
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down servers...');
-  httpServer.close(() => {
-    console.log('HTTP server closed');
-  });
-  mqttServer.close(() => {
-    console.log('MQTT server closed');
-  });
-  aedes.close(() => {
-    console.log('Aedes broker closed');
-    process.exit(0);
-  });
-});
+
 
 // Error handling
 process.on('uncaughtException', (error) => {

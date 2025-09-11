@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = 'carbon_footprint_secret_key'; // In production, use environment variable
+const JWT_SECRET = process.env.JWT_SECRET || 'carbon_footprint_secret_key';
 
 const auth = (req, res, next) => {
   try {
