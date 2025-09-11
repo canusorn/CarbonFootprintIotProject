@@ -26,6 +26,14 @@ This project follows a microservice architecture with separate frontend and back
 
 ## Development Guidelines
 
+### Server Management
+1. **DO NOT START SERVER**: The development server is already running
+   - Do not execute `npm run dev`, `npm start`, or `node server.js`
+   - Do not use `run_in_terminal` to start the server
+   - Server is assumed to be active and accessible
+   - Only make code changes without restarting the server
+   - Assume server is running on port 3000 and MQTT on port 1883
+
 ### Backend Development
 1. All backend code must be placed in the `node/` directory
 2. Use Express.js for creating REST API endpoints
@@ -63,10 +71,33 @@ This project follows a microservice architecture with separate frontend and back
 3. Backend → MQTT messages → Frontend (real-time updates)
 4. Frontend displays data using PrimeVue components
 
+### Authentication System
+1. **JWT Authentication**: Use JSON Web Tokens for user authentication
+   - JWT tokens must have NO expiration date (never expire)
+   - Store JWT securely on frontend for persistent sessions
+   - Include JWT in Authorization header for protected routes
+
+2. **User Credentials**: Authentication uses ONLY email and password
+   - Email: Primary identifier for user accounts
+   - Password: User-provided password for authentication
+   - NO additional fields (username, first name, last name, etc.)
+
+3. **Password Security**: All passwords must be hashed
+   - Use bcryptjs library for password hashing
+   - Hash passwords before storing in database
+   - Compare hashed passwords during login verification
+   - Never store plain text passwords
+
+4. **Protected Routes**: Implement JWT-based route protection
+   - Verify JWT tokens on protected API endpoints
+   - Return 401 Unauthorized for invalid/missing tokens
+   - Frontend route guards for authenticated pages
+
 ### Technology Stack Compliance
-- **Backend**: Node.js + Express + Aedes
+- **Backend**: Node.js + Express + Aedes + JWT + bcryptjs
 - **Frontend**: Vue.js 3 + PrimeVue
 - **Communication**: REST API + MQTT
+- **Authentication**: JWT tokens (no expiration) + hashed passwords
 - **Package Management**: npm for both frontend and backend
 
 All code changes and new features must adhere to this architectural pattern.
