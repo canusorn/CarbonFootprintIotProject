@@ -1,48 +1,44 @@
 // Device and sensor data API routes
+const SensorService = require('../services/sensorService');
 
-// Create route handlers that accept data arrays
-const createDeviceRoutes = (devices, sensorData) => {
+// Create route handlers
+const createDeviceRoutes = () => {
   return {
     // Get all devices
     getAllDevices: (req, res) => {
-      res.json(devices);
+      res.status(501).json({ error: 'Device management not implemented - data stored in database' });
     },
 
     // Get device by ID
     getDeviceById: (req, res) => {
-      const device = devices.find(d => d.id === req.params.id);
-      if (!device) {
-        return res.status(404).json({ error: 'Device not found' });
-      }
-      res.json(device);
+      res.status(501).json({ error: 'Device management not implemented - data stored in database' });
     },
 
     // Update device
     updateDevice: (req, res) => {
-      const deviceIndex = devices.findIndex(d => d.id === req.params.id);
-      if (deviceIndex === -1) {
-        return res.status(404).json({ error: 'Device not found' });
-      }
-      
-      devices[deviceIndex] = { ...devices[deviceIndex], ...req.body, updatedAt: new Date().toISOString() };
-      res.json(devices[deviceIndex]);
+      res.status(501).json({ error: 'Device management not implemented - data stored in database' });
     },
 
     // Get all sensor data
-    getSensorData: (req, res) => {
-      const { limit = 50, topic, clientId } = req.query;
-      let filteredData = sensorData;
-      
-      if (topic) {
-        filteredData = filteredData.filter(data => data.topic.includes(topic));
+    getSensorData: async (req, res) => {
+      try {
+        const { limit = 50, espId } = req.query;
+        
+        if (!espId) {
+          return res.status(400).json({ error: 'ESP ID is required' });
+        }
+        
+        const sensorService = new SensorService();
+        await sensorService.initialize();
+        
+        const data = await sensorService.getLatestData(espId, parseInt(limit));
+        res.json(data);
+        
+        await sensorService.close();
+      } catch (error) {
+        console.error('Error retrieving sensor data:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve sensor data' });
       }
-      
-      if (clientId) {
-        filteredData = filteredData.filter(data => data.clientId === clientId);
-      }
-      
-      const limitedData = filteredData.slice(-parseInt(limit));
-      res.json(limitedData);
     }
   };
 };

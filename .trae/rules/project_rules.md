@@ -103,8 +103,14 @@ This project follows a microservice architecture with separate frontend and back
    - Password: configurable via DB_PASSWORD
 
 3. **Database Schema**:
-   - Users table for authentication (id, email, password_hash, created_at, updated_at)
-   - Additional tables for IoT device data and carbon footprint metrics
+   - **Main Database**: Uses DB_NAME from .env file for:
+     - Users table for authentication (id, email, password_hash, created_at, updated_at)
+     - Device table for ESP device information (id, espid, name, username, date)
+     - Additional tables for carbon footprint metrics and application data
+   - **Sensor Data**: Uses time series storage with ESP ID-based table naming:
+     - Individual tables per ESP device (e.g., `sensor_data_ESP001`)
+     - Optimized for high-frequency sensor data ingestion
+     - Time-based indexing for efficient querying
    - Proper indexing for performance optimization
 
 4. **Environment Variables**:

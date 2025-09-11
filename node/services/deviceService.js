@@ -1,0 +1,189 @@
+const mysql = require('mysql2/promise');
+const { pool } = require('../config/database');
+
+class DeviceService {
+  constructor() {
+    this.connection = null;
+  }
+
+  async initialize() {
+    const startTime = Date.now();
+    
+    try {
+      console.log('🔄 Initializing device service database connection...');
+      
+      this.connection = pool;
+      
+      // Test the connection
+      const testConnection = await pool.getConnection();
+      await testConnection.ping();
+      testConnection.release();
+      
+      // Create device table if it doesn't exist
+      await this.createDeviceTableIfNotExists();
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Device service database connection established in ${duration}ms`);
+      
+      return true;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error(`❌ Failed to initialize device service after ${duration}ms:`);
+      console.error(`   Connection Error: ${error.message}`);
+      console.error(`   Error Code: ${error.code || 'UNKNOWN'}`);
+      console.error(`   Host: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 3306}`);
+      console.error(`   Database: ${process.env.DB_NAME || 'carbon_footprint_db'}`);
+      
+      throw new Error(`Device service initialization failed: ${error.message}`);
+    }
+  }
+
+  async createDeviceTableIfNotExists() {
+    try {
+      console.log('🔄 Creating device table if not exists...');
+      
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS device (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          espid VARCHAR(50) UNIQUE NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          username VARCHAR(255) NOT NULL,
+          date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_espid (espid),
+          INDEX idx_username (username)
+        )
+      `;
+      
+      await this.connection.execute(createTableQuery);
+      console.log('✅ Device table verified/created successfully');
+      
+    } catch (error) {
+      console.error('❌ Failed to create device table:', error.message);
+      throw error;
+    }
+  }
+
+  async saveDevice(espId, name, username) {
+    try {
+      console.log(`🔄 Saving device data for ESP ID: ${espId}`);
+      
+      if (!this.connection) {
+        throw new Error('Device service not initialized');
+      }
+      
+      // Insert or update device information
+      const insertQuery = `
+        INSERT INTO device (espid, name, username, date) 
+        VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE 
+          name = VALUES(name),
+          username = VALUES(username),
+          date = NOW(),
+          updated_at = CURRENT_TIMESTAMP
+      `;
+      
+      const [result] = await this.connection.execute(insertQuery, [espId, name, username]);
+      
+      console.log(`✅ Device data saved successfully for ESP ID: ${espId}`);
+      console.log(`   Affected rows: ${result.affectedRows}`);
+      console.log(`   Insert ID: ${result.insertId || 'Updated existing'}`);
+      
+      return {
+        success: true,
+        espId,
+        name,
+        username,
+        affectedRows: result.affectedRows,
+        insertId: result.insertId
+      };
+      
+    } catch (error) {
+      console.error(`❌ Failed to save device data for ESP ID: ${espId}`);
+      console.error(`   Error: ${error.message}`);
+      console.error(`   SQL State: ${error.sqlState || 'N/A'}`);
+      console.error(`   Error Code: ${error.code || 'UNKNOWN'}`);
+      
+      throw error;
+    }
+  }
+
+  async getDevice(espId) {
+    try {
+      console.log(`🔄 Retrieving device data for ESP ID: ${espId}`);
+      
+      if (!this.connection) {
+        throw new Error('Device service not initialized');
+      }
+      
+      const selectQuery = 'SELECT * FROM device WHERE espid = ? ORDER BY updated_at DESC LIMIT 1';
+      const [rows] = await this.connection.execute(selectQuery, [espId]);
+      
+      if (rows.length === 0) {
+        console.log(`ℹ️ No device found for ESP ID: ${espId}`);
+        return null;
+      }
+      
+      console.log(`✅ Device data retrieved for ESP ID: ${espId}`);
+      return rows[0];
+      
+    } catch (error) {
+      console.error(`❌ Failed to retrieve device data for ESP ID: ${espId}`);
+      console.error(`   Error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getAllDevices() {
+    try {
+      console.log('🔄 Retrieving all devices...');
+      
+      if (!this.connection) {
+        throw new Error('Device service not initialized');
+      }
+      
+      const selectQuery = 'SELECT * FROM device ORDER BY updated_at DESC';
+      const [rows] = await this.connection.execute(selectQuery);
+      
+      console.log(`✅ Retrieved ${rows.length} devices`);
+      return rows;
+      
+    } catch (error) {
+      console.error('❌ Failed to retrieve all devices');
+      console.error(`   Error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async saveEspDevice(espId, name, username) {
+    try {
+      console.log(`🔄 Saving ESP device: ${espId}`);
+
+      if (!this.connection) {
+        console.log('⚠️ Device service not initialized, skipping device save');
+        return { success: false, error: 'Device service not available' };
+      }
+
+      const result = await this.saveDevice(espId, name, username);
+      console.log(`✅ ESP device saved successfully: ${espId}`);
+
+      return result;
+    } catch (error) {
+      console.error(`❌ Failed to save ESP device: ${espId}`);
+      console.error(`   Error: ${error.message}`);
+
+      return { success: false, error: error.message };
+    }
+  }
+
+  async close() {
+    if (this.connection) {
+      await this.connection.end();
+      this.connection = null;
+      console.log('Device service: Database connection pool closed');
+    }
+  }
+}
+
+module.exports = DeviceService;
