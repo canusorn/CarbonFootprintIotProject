@@ -47,10 +47,37 @@ aedes.on('clientDisconnect', (client) => {
   console.log(`MQTT Client disconnected: ${client.id}`);
 });
 
+aedes.authenticate = (client, username, password, callback) => {
+
+
+  if (!client) {
+    logger.error("Client error for authenticating : " + error.message);
+    callback(new Error('Client error for authenticating'), false);
+  }
+
+  if (username)
+    username = username.toLowerCase();
+
+  try {
+    password = Buffer.from(password, 'base64').toString();
+    console.log(`MQTT Authenticate id: ${client.id} User: ${username}`);
+
+    if (password === process.env.MQTT_PASSWORD) {
+      callback(null, true); // Successful authentication
+    } else {
+      callback(new Error('Authentication failed'), false);
+    }
+
+  } catch (error) {
+    console.error('\x1B[31mError authenticating : ' + error.message);
+  }
+
+};
+
 aedes.on('publish', (packet, client) => {
   if (client) {
     console.log(`Message from ${client.id} on topic ${packet.topic}: ${packet.payload.toString()}`);
-    
+
     // Store sensor data when published to specific topics
     if (packet.topic.startsWith('sensor/')) {
       try {
@@ -63,7 +90,7 @@ aedes.on('publish', (packet, client) => {
           timestamp: new Date().toISOString()
         };
         sensorData.push(sensorReading);
-        
+
         // Keep only last 1000 readings
         if (sensorData.length > 1000) {
           sensorData = sensorData.slice(-1000);
@@ -79,53 +106,22 @@ aedes.on('subscribe', (subscriptions, client) => {
   console.log(`Client ${client.id} subscribed to:`, subscriptions.map(s => s.topic));
 });
 
+// Import device routes factory
+const createDeviceRoutes = require('./routes/devices');
+
+// Create device routes with data arrays
+const deviceRoutes = createDeviceRoutes(devices, sensorData);
+
 // API Routes
-// Get all devices
-app.get('/api/devices', (req, res) => {
-  res.json(devices);
-});
-
-// Get device by ID
-app.get('/api/devices/:id', (req, res) => {
-  const device = devices.find(d => d.id === req.params.id);
-  if (!device) {
-    return res.status(404).json({ error: 'Device not found' });
-  }
-  res.json(device);
-});
-
-// Update device
-app.put('/api/devices/:id', (req, res) => {
-  const deviceIndex = devices.findIndex(d => d.id === req.params.id);
-  if (deviceIndex === -1) {
-    return res.status(404).json({ error: 'Device not found' });
-  }
-  
-  devices[deviceIndex] = { ...devices[deviceIndex], ...req.body, updatedAt: new Date().toISOString() };
-  res.json(devices[deviceIndex]);
-});
-
-// Get all sensor data
-app.get('/api/sensor-data', (req, res) => {
-  const { limit = 50, topic, clientId } = req.query;
-  let filteredData = sensorData;
-  
-  if (topic) {
-    filteredData = filteredData.filter(data => data.topic.includes(topic));
-  }
-  
-  if (clientId) {
-    filteredData = filteredData.filter(data => data.clientId === clientId);
-  }
-  
-  const limitedData = filteredData.slice(-parseInt(limit));
-  res.json(limitedData);
-});
+app.get('/api/devices', deviceRoutes.getAllDevices);
+app.get('/api/devices/:id', deviceRoutes.getDeviceById);
+app.put('/api/devices/:id', deviceRoutes.updateDevice);
+app.get('/api/sensor-data', deviceRoutes.getSensorData);
 
 // Initialize database and start servers
 const startServer = async () => {
   let databaseConnected = false;
-  
+
   try {
     // Try to initialize database
     await initializeDatabase();
@@ -135,28 +131,26 @@ const startServer = async () => {
     console.error('⚠️  Authentication will not work until MySQL is configured');
     console.error('⚠️  Please follow the setup instructions above to enable database features\n');
   }
-  
+
   try {
     // Start HTTP server
     const httpServer = http.createServer(app);
     httpServer.listen(port, () => {
       console.log(`🚀 API Server running on port ${port}`);
-      console.log(`📊 Health check: http://localhost:${port}/health`);
-      console.log(`📡 API Base URL: http://localhost:${port}/api`);
       if (databaseConnected) {
         console.log(`✅ MySQL database connected and ready`);
       } else {
         console.log(`⚠️  MySQL database not connected - authentication disabled`);
       }
     });
-    
+
     // Start MQTT broker
     const mqttServer = net.createServer(aedes.handle);
     mqttServer.listen(mqttPort, () => {
       console.log(`🔌 MQTT Broker running on port ${mqttPort}`);
       console.log(`📱 MQTT Connection: mqtt://localhost:${mqttPort}`);
     });
-    
+
     // Graceful shutdown
     process.on('SIGINT', () => {
       console.log('\n🛑 Shutting down servers...');
@@ -171,7 +165,7 @@ const startServer = async () => {
         process.exit(0);
       });
     });
-    
+
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
