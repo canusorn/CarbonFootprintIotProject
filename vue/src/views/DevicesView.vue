@@ -47,10 +47,6 @@
               <span>{{ device.username }}</span>
             </div>
             <div class="info-item">
-              <label>Last Updated:</label>
-              <span>{{ formatDate(device.updated_at) }}</span>
-            </div>
-            <div class="info-item">
               <label>Created:</label>
               <span>{{ formatDate(device.created_at) }}</span>
             </div>
