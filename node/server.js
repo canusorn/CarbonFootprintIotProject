@@ -70,41 +70,9 @@ aedes.on('subscribe', (subscriptions, client) => {
 });
 
 // API Routes
-
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    mqtt_broker: 'running',
-    api_server: 'running'
-  });
-});
-
 // Get all devices
 app.get('/api/devices', (req, res) => {
   res.json(devices);
-});
-
-// Register a new device
-app.post('/api/devices', (req, res) => {
-  const { deviceId, name, type, location } = req.body;
-  
-  if (!deviceId || !name) {
-    return res.status(400).json({ error: 'deviceId and name are required' });
-  }
-  
-  const device = {
-    id: deviceId,
-    name,
-    type: type || 'sensor',
-    location: location || 'unknown',
-    registeredAt: new Date().toISOString(),
-    lastSeen: null
-  };
-  
-  devices.push(device);
-  res.status(201).json(device);
 });
 
 // Get device by ID
@@ -127,17 +95,6 @@ app.put('/api/devices/:id', (req, res) => {
   res.json(devices[deviceIndex]);
 });
 
-// Delete device
-app.delete('/api/devices/:id', (req, res) => {
-  const deviceIndex = devices.findIndex(d => d.id === req.params.id);
-  if (deviceIndex === -1) {
-    return res.status(404).json({ error: 'Device not found' });
-  }
-  
-  devices.splice(deviceIndex, 1);
-  res.status(204).send();
-});
-
 // Get all sensor data
 app.get('/api/sensor-data', (req, res) => {
   const { limit = 50, topic, clientId } = req.query;
@@ -153,52 +110,6 @@ app.get('/api/sensor-data', (req, res) => {
   
   const limitedData = filteredData.slice(-parseInt(limit));
   res.json(limitedData);
-});
-
-// Get latest sensor data by topic
-app.get('/api/sensor-data/latest/:topic', (req, res) => {
-  const topic = req.params.topic;
-  const topicData = sensorData.filter(data => data.topic === `sensor/${topic}`);
-  
-  if (topicData.length === 0) {
-    return res.status(404).json({ error: 'No data found for this topic' });
-  }
-  
-  const latest = topicData[topicData.length - 1];
-  res.json(latest);
-});
-
-// Publish message to MQTT topic (API endpoint to send commands to devices)
-app.post('/api/mqtt/publish', (req, res) => {
-  const { topic, message, qos = 0, retain = false } = req.body;
-  
-  if (!topic || !message) {
-    return res.status(400).json({ error: 'topic and message are required' });
-  }
-  
-  const packet = {
-    topic,
-    payload: typeof message === 'string' ? message : JSON.stringify(message),
-    qos,
-    retain
-  };
-  
-  aedes.publish(packet, (error) => {
-    if (error) {
-      return res.status(500).json({ error: 'Failed to publish message', details: error.message });
-    }
-    res.json({ success: true, message: 'Message published successfully' });
-  });
-});
-
-// Get MQTT broker statistics
-app.get('/api/mqtt/stats', (req, res) => {
-  res.json({
-    connectedClients: Object.keys(aedes.clients).length,
-    totalClients: aedes.stats.clients.total,
-    totalMessages: aedes.stats.publish.total,
-    uptime: process.uptime()
-  });
 });
 
 // Start HTTP server
