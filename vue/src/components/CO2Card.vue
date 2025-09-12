@@ -22,6 +22,7 @@
 
 <script>
 import Card from 'primevue/card'
+import { formatCO2 } from '@/services/co2Calculator.js'
 
 export default {
   name: 'CO2Card',
@@ -44,7 +45,7 @@ export default {
   },
   methods: {
     formatCO2(value) {
-      return (value || 0).toFixed(3)
+      return formatCO2(value, 3, false) // Use global function without unit
     }
   }
 }

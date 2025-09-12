@@ -141,7 +141,15 @@
                   </div>
                   <div class="detail">
                     <span class="label">CO2 Impact:</span>
-                    <span class="value">{{ totalCO2.toFixed(2) }} kg</span>
+                    <span class="value">{{ formatCO2(totalCO2, 2) }}</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">Daily CO2:</span>
+                    <span class="value">{{ formatCO2(dailyCO2, 2) }}</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">≈ Trees Needed:</span>
+                    <span class="value">{{ co2Equivalents.trees }} trees/year</span>
                   </div>
                 </div>
               </div>
@@ -191,6 +199,13 @@ import DataCard from '@/components/DataCard.vue'
 import EnergyCard from '@/components/EnergyCard.vue'
 import CO2Card from '@/components/CO2Card.vue'
 import DailyEnergyChart from '@/components/DailyEnergyChart.vue'
+import { 
+  calculateCO2Emissions, 
+  calculateThreePhaseCO2, 
+  formatCO2, 
+  getCO2Equivalents,
+  EMISSION_FACTORS 
+} from '@/services/co2Calculator.js'
 
 // Register Chart.js components
 Chart.register(...registerables)
@@ -233,7 +248,7 @@ export default {
     const powerChart = ref(null)
     const mqttClient = ref(null)
     const isConnected = ref(false)
-    const emissionFactor = ref(0.5) // kg CO2 per kWh (example factor)
+    const emissionFactor = ref(EMISSION_FACTORS.THAILAND) // kg CO2 per kWh (Thailand grid factor)
     const espId = ref(route.params.espid || 'ESP001') // Get from route parameter or default
     
     // Computed properties
@@ -242,12 +257,30 @@ export default {
     })
     
     const totalCO2 = computed(() => {
-      return (sensorData.value.Ett || 0) * emissionFactor.value
+      return calculateCO2Emissions(sensorData.value.Ett || 0, emissionFactor.value)
     })
     
     const dailyCO2 = computed(() => {
-      // Simplified daily calculation - in real app, this would be based on daily energy consumption
-      return totalCO2.value * 0.1 // Example: 10% of total for daily
+      // Calculate daily CO2 from today's energy consumption
+      return calculateCO2Emissions(todayEnergyData.value.todayEnergy || 0, emissionFactor.value)
+    })
+    
+    // Real-time three-phase CO2 calculations
+    const phaseCO2Data = computed(() => {
+      return calculateThreePhaseCO2(
+        {
+          Pa: sensorData.value.Pa || 0,
+          Pb: sensorData.value.Pb || 0,
+          Pc: sensorData.value.Pc || 0
+        },
+        1, // 1 hour for rate calculation
+        emissionFactor.value
+      )
+    })
+    
+    // CO2 equivalents for better understanding
+    const co2Equivalents = computed(() => {
+      return getCO2Equivalents(totalCO2.value)
     })
     
     const connectionStatus = computed(() => {
@@ -635,10 +668,15 @@ export default {
       totalPower,
       totalCO2,
       dailyCO2,
+      phaseCO2Data,
+      co2Equivalents,
       connectionStatus,
       connectionStatusIcon,
       connectionStatusColor,
-      formatTimestamp
+      formatTimestamp,
+      formatCO2,
+      calculateCO2Emissions,
+      EMISSION_FACTORS
     }
   }
 }

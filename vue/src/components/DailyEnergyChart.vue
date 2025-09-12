@@ -39,6 +39,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
+import { calculateCO2Emissions, formatCO2 } from '@/services/co2Calculator.js'
 
 // Register Chart.js components
 ChartJS.register(
@@ -73,7 +74,10 @@ export default {
     })
 
     const totalCO2 = computed(() => {
-      return props.dailyEnergyData.reduce((sum, item) => sum + (item.co2 || item.energy * props.emissionFactor || 0), 0)
+      return props.dailyEnergyData.reduce((sum, item) => {
+        const co2 = item.co2 || calculateCO2Emissions(item.energy || 0, props.emissionFactor)
+        return sum + co2
+      }, 0)
     })
     // Chart data computation
     const chartData = computed(() => {
