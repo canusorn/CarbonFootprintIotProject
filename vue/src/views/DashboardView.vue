@@ -448,164 +448,81 @@ export default {
       }
     }
     
-    // Calculate daily energy consumption from historical data (last 30 days)
-    const calculateDailyEnergy = (data) => {
-
-      if (!data || data.length === 0) {
-        console.warn('No data provided for daily energy calculation')
-        return []
-      }
-      
-      try {
-        // Get date range for last 30 days
-        const today = new Date()
-        const thirtyDaysAgo = new Date(today)
-        thirtyDaysAgo.setDate(today.getDate() - 30)
-        
-        // Group data by date and validate timestamps
-        const dailyData = {}
-        
-        data.forEach(record => {
-          // Validate time field exists
-          if (!record.time) {
-            console.warn('Missing time field in record:', record)
-            return
-          }
-          
-          try {
-            // Validate date creation
-            const date = new Date(record.time)
-            if (isNaN(date.getTime())) {
-              console.warn('Invalid time value:', record.time)
-              return
-            }
-            
-            // Filter for last 30 days only
-            if (date < thirtyDaysAgo || date > today) {
-              return
-            }
-            
-            const dateKey = date.toISOString().split('T')[0]
-            
-            if (!dailyData[dateKey]) {
-              dailyData[dateKey] = []
-            }
-            dailyData[dateKey].push(record)
-          } catch (dateError) {
-            console.warn('Error processing time field:', record.time, dateError)
-          }
-        })
-        
-        // Generate all dates for last 30 days (including days with no data)
-        const result = []
-        for (let i = 29; i >= 0; i--) {
-          const currentDate = new Date(today)
-          currentDate.setDate(today.getDate() - i)
-          const dateKey = currentDate.toISOString().split('T')[0]
-          
-          let dailyEnergy = 0
-          let co2Emissions = 0
-          
-          if (dailyData[dateKey] && dailyData[dateKey].length > 0) {
-            try {
-              const dayRecords = dailyData[dateKey]
-              
-              // Sort records by time to get first and last
-              dayRecords.sort((a, b) => {
-                try {
-                  return new Date(a.time) - new Date(b.time)
-                } catch (sortError) {
-                  console.warn('Error sorting records by time:', sortError)
-                  return 0
-                }
-              })
-              
-              const firstRecord = dayRecords[0]
-              const lastRecord = dayRecords[dayRecords.length - 1]
-              
-              // Calculate daily energy consumption (last - first Ett value)
-              dailyEnergy = parseFloat(lastRecord.Ett || 0) - parseFloat(firstRecord.Ett || 0)
-              dailyEnergy = Math.max(0, dailyEnergy) // Ensure non-negative
-              
-              // Calculate CO2 emissions
-              co2Emissions = dailyEnergy * emissionFactor.value
-            } catch (dayError) {
-              console.warn('Error calculating daily energy for date:', dateKey, dayError)
-            }
-          }
-          
-          result.push({
-            date: dateKey,
-            energy: dailyEnergy,
-            co2: Math.max(0, co2Emissions)
-          })
-        }
-        
-        return result
-      } catch (error) {
-        console.error('Error in calculateDailyEnergy:', error)
-        return []
-      }
-    }
+    // Daily energy calculation is now handled by the backend via SQL queries
+    // This improves performance for large datasets by offloading computation to the database
     
     // Fetch historical data from backend
     const fetchHistoricalData = async () => {
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}`, {
+        
+        // Fetch latest sensor data for dashboard display
+        const sensorResponse = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}?limit=50`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
         
-        // Validate response data
-        if (!response.data || !Array.isArray(response.data)) {
-          console.warn('Invalid response data format:', response.data)
+        // Validate sensor response data
+        if (!sensorResponse.data || !Array.isArray(sensorResponse.data)) {
+          console.warn('Invalid sensor response data format:', sensorResponse.data)
           historicalData.value = []
-          dailyEnergyData.value = []
-          return
-        }
-        
-        historicalData.value = response.data
-        console.log('Fetched historical data:', response.data.length, 'records')
-        
-        // Calculate daily energy data for chart with error handling
-        try {
-          dailyEnergyData.value = calculateDailyEnergy(response.data)
-          console.log('Daily energy data calculated:', dailyEnergyData.value.length, 'days')
-        } catch (chartError) {
-          console.error('Error calculating daily energy data:', chartError)
-          dailyEnergyData.value = []
-        }
-        
-        // Set initial dashboard values from latest historical data
-        if (response.data && response.data.length > 0) {
-          try {
-            const latestData = response.data[response.data.length - 1]
-            sensorData.value = {
-              Va: parseFloat(latestData.Va || 0),
-              Vb: parseFloat(latestData.Vb || 0),
-              Vc: parseFloat(latestData.Vc || 0),
-              Ia: parseFloat(latestData.Ia || 0),
-              Ib: parseFloat(latestData.Ib || 0),
-              Ic: parseFloat(latestData.Ic || 0),
-              Pa: parseFloat(latestData.Pa || 0),
-              Pb: parseFloat(latestData.Pb || 0),
-              Pc: parseFloat(latestData.Pc || 0),
-              PFa: parseFloat(latestData.PFa || 0),
-              PFb: parseFloat(latestData.PFb || 0),
-              PFc: parseFloat(latestData.PFc || 0),
-              Eim: parseFloat(latestData.Eim || 0),
-              Eex: parseFloat(latestData.Eex || 0),
-              Ett: parseFloat(latestData.Ett || 0)
+        } else {
+          historicalData.value = sensorResponse.data
+          console.log('Fetched historical data:', sensorResponse.data.length, 'records')
+          
+          // Set initial dashboard values from latest historical data
+          if (sensorResponse.data && sensorResponse.data.length > 0) {
+            try {
+              const latestData = sensorResponse.data[sensorResponse.data.length - 1]
+              sensorData.value = {
+                Va: parseFloat(latestData.Va || 0),
+                Vb: parseFloat(latestData.Vb || 0),
+                Vc: parseFloat(latestData.Vc || 0),
+                Ia: parseFloat(latestData.Ia || 0),
+                Ib: parseFloat(latestData.Ib || 0),
+                Ic: parseFloat(latestData.Ic || 0),
+                Pa: parseFloat(latestData.Pa || 0),
+                Pb: parseFloat(latestData.Pb || 0),
+                Pc: parseFloat(latestData.Pc || 0),
+                PFa: parseFloat(latestData.PFa || 0),
+                PFb: parseFloat(latestData.PFb || 0),
+                PFc: parseFloat(latestData.PFc || 0),
+                Eim: parseFloat(latestData.Eim || 0),
+                Eex: parseFloat(latestData.Eex || 0),
+                Ett: parseFloat(latestData.Ett || 0)
+              }
+              console.log('Initial dashboard values set from historical data')
+            } catch (dataError) {
+              console.error('Error setting initial dashboard values:', dataError)
             }
-            console.log('Initial dashboard values set from historical data')
-          } catch (dataError) {
-            console.error('Error setting initial dashboard values:', dataError)
           }
         }
+        
+        // Fetch daily energy data from backend (calculated via SQL)
+        const dailyResponse = await axios.get(`http://localhost:3000/api/daily-energy/${espId.value}?days=30`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        // Validate daily energy response data
+        if (!dailyResponse.data || !Array.isArray(dailyResponse.data)) {
+          console.warn('Invalid daily energy response data format:', dailyResponse.data)
+          dailyEnergyData.value = []
+        } else {
+          // Transform backend data to include CO2 calculations
+          dailyEnergyData.value = dailyResponse.data.map(item => ({
+            date: item.date,
+            energy: parseFloat(item.energy || 0),
+            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            recordCount: parseInt(item.recordCount || 0)
+          }))
+          console.log('Fetched daily energy data from backend:', dailyEnergyData.value.length, 'days')
+        }
+        
       } catch (error) {
-        console.error('Error fetching historical data:', error)
+        console.error('Error fetching data:', error)
         // Set empty arrays to prevent further errors
         historicalData.value = []
         dailyEnergyData.value = []

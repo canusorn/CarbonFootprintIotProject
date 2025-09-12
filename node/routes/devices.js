@@ -77,6 +77,35 @@ const createDeviceRoutes = (deviceService, sensorService) => {
         console.error('Error retrieving sensor data:', error.message);
         res.status(500).json({ error: 'Failed to retrieve sensor data' });
       }
+    },
+
+    // Get daily energy data
+    getDailyEnergyData: async (req, res) => {
+      try {
+        const { espId } = req.params;
+        const { days = 30 } = req.query;
+        
+        if (!espId) {
+          return res.status(400).json({ error: 'ESP ID is required' });
+        }
+        
+        // Validate days parameter
+        const daysInt = parseInt(days);
+        if (isNaN(daysInt) || daysInt < 1 || daysInt > 365) {
+          return res.status(400).json({ error: 'Days parameter must be between 1 and 365' });
+        }
+        
+        // Check if sensor service is available
+        if (!sensorService) {
+          return res.status(503).json({ error: 'Sensor service not available. Please check database connection.' });
+        }
+        
+        const data = await sensorService.getDailyEnergyData(espId, daysInt);
+        res.json(data);
+      } catch (error) {
+        console.error('Error retrieving daily energy data:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve daily energy data' });
+      }
     }
   };
 };

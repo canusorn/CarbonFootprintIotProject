@@ -286,6 +286,14 @@ app.get('/api/sensor-data/:espId', auth, async (req, res) => {
   }
 });
 
+// Get daily energy data by ESP ID
+app.get('/api/daily-energy/:espId', auth, async (req, res) => {
+  if (deviceRoutes && deviceRoutes.getDailyEnergyData) {
+    return deviceRoutes.getDailyEnergyData(req, res);
+  }
+  res.status(503).json({ error: 'Daily energy service not available' });
+});
+
 // Initialize database and start servers
 // Function to initialize services
 const initializeServices = async () => {

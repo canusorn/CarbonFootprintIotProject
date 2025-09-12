@@ -198,6 +198,100 @@ class SensorService {
     return await this.getLatestData(espId, limit);
   }
 
+  async getDailyEnergyData(espId, days = 30) {
+    const startTime = Date.now();
+    
+    if (!this.connection) {
+      throw new Error('Database connection not initialized');
+    }
+
+    const tableName = `${espId}`;
+    
+    try {
+      console.log(`🔄 Calculating daily energy data for ESP: ${espId} (last ${days} days)`);
+      
+      // SQL query to calculate daily energy consumption for the last N days
+      // Using subqueries instead of CTEs for MySQL compatibility
+      const query = `
+        SELECT 
+          dr.date,
+          COALESCE(dd.daily_energy, 0) as daily_energy,
+          COALESCE(dd.record_count, 0) as record_count
+        FROM (
+          SELECT DATE_SUB(CURDATE(), INTERVAL (seq - 1) DAY) as date
+          FROM (
+            SELECT @row := @row + 1 as seq
+            FROM (
+              SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+              SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+            ) t1,
+            (
+              SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+              SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+            ) t2,
+            (SELECT @row := 0) r
+          ) seq_table
+          WHERE seq <= ?
+        ) dr
+        LEFT JOIN (
+          SELECT 
+            DATE(time) as date,
+            MAX(Ett) - MIN(Ett) as daily_energy,
+            COUNT(*) as record_count
+          FROM \`${tableName}\`
+          WHERE time >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+            AND time < CURDATE() + INTERVAL 1 DAY
+          GROUP BY DATE(time)
+        ) dd ON dr.date = dd.date
+        ORDER BY dr.date ASC
+      `;
+
+      const [rows] = await this.connection.execute(query, [days, days]);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Daily energy calculation completed for ESP ${espId} in ${duration}ms (${rows.length} days)`);
+      
+      // Format the results
+      const result = rows.map(row => ({
+        date: row.date.toISOString().split('T')[0],
+        energy: Math.max(0, parseFloat(row.daily_energy) || 0),
+        recordCount: parseInt(row.record_count) || 0
+      }));
+      
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        console.log(`⚠️  Table '${tableName}' does not exist for ESP ${espId} - returning empty data`);
+        
+        // Return empty data for the requested date range
+        const result = [];
+        const today = new Date();
+        
+        for (let i = days - 1; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          result.push({
+            date: date.toISOString().split('T')[0],
+            energy: 0,
+            recordCount: 0
+          });
+        }
+        
+        return result;
+      }
+      
+      console.error(`❌ Failed to calculate daily energy for ESP ${espId} after ${duration}ms:`);
+      console.error(`   Database Error: ${error.message}`);
+      console.error(`   Error Code: ${error.code || 'UNKNOWN'}`);
+      console.error(`   SQL State: ${error.sqlState || 'N/A'}`);
+      
+      throw new Error(`Daily energy calculation failed for ESP ${espId}: ${error.message}`);
+    }
+  }
+
   async close() {
     // Don't close the shared pool, just reset the reference
     // The pool is managed by the database configuration
