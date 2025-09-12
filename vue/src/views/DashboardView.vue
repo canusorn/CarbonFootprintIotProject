@@ -17,183 +17,72 @@
 
           <!-- Real-time Data Cards -->
           <div class="data-cards-grid">
-            <!-- Voltage Cards -->
-            <Card class="data-card voltage-card">
-              <template #title>Voltage (V)</template>
-              <template #content>
-                <div class="phase-data">
-                  <div class="phase-item">
-                    <span class="phase-label">Phase A:</span>
-                    <span class="phase-value">{{ sensorData.Va?.toFixed(1) || '0.0' }}V</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase B:</span>
-                    <span class="phase-value">{{ sensorData.Vb?.toFixed(1) || '0.0' }}V</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase C:</span>
-                    <span class="phase-value">{{ sensorData.Vc?.toFixed(1) || '0.0' }}V</span>
-                  </div>
-                </div>
-              </template>
-            </Card>
+            <!-- Voltage Card -->
+            <DataCard
+              title="Voltage (V)"
+              :phase-a="sensorData.Va"
+              :phase-b="sensorData.Vb"
+              :phase-c="sensorData.Vc"
+              unit="V"
+              card-class="voltage-card"
+              :precision="1"
+            />
 
-            <!-- Current Cards -->
-            <Card class="data-card current-card">
-              <template #title>Current (A)</template>
-              <template #content>
-                <div class="phase-data">
-                  <div class="phase-item">
-                    <span class="phase-label">Phase A:</span>
-                    <span class="phase-value">{{ sensorData.Ia?.toFixed(2) || '0.00' }}A</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase B:</span>
-                    <span class="phase-value">{{ sensorData.Ib?.toFixed(2) || '0.00' }}A</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase C:</span>
-                    <span class="phase-value">{{ sensorData.Ic?.toFixed(2) || '0.00' }}A</span>
-                  </div>
-                </div>
-              </template>
-            </Card>
+            <!-- Current Card -->
+            <DataCard
+              title="Current (A)"
+              :phase-a="sensorData.Ia"
+              :phase-b="sensorData.Ib"
+              :phase-c="sensorData.Ic"
+              unit="A"
+              card-class="current-card"
+              :precision="2"
+            />
 
-            <!-- Power Cards -->
-            <Card class="data-card power-card">
-              <template #title>Power (W)</template>
-              <template #content>
-                <div class="phase-data">
-                  <div class="phase-item">
-                    <span class="phase-label">Phase A:</span>
-                    <span class="phase-value">{{ sensorData.Pa?.toFixed(1) || '0.0' }}W</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase B:</span>
-                    <span class="phase-value">{{ sensorData.Pb?.toFixed(1) || '0.0' }}W</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase C:</span>
-                    <span class="phase-value">{{ sensorData.Pc?.toFixed(1) || '0.0' }}W</span>
-                  </div>
-                  <div class="total-power">
-                    <strong>Total: {{ totalPower.toFixed(1) }}W</strong>
-                  </div>
-                </div>
-              </template>
-            </Card>
+            <!-- Power Card -->
+            <DataCard
+              title="Power (W)"
+              :phase-a="sensorData.Pa"
+              :phase-b="sensorData.Pb"
+              :phase-c="sensorData.Pc"
+              unit="W"
+              card-class="power-card"
+              :precision="1"
+              :show-total="true"
+            />
 
-            <!-- Power Factor Cards -->
-            <Card class="data-card pf-card">
-              <template #title>Power Factor</template>
-              <template #content>
-                <div class="phase-data">
-                  <div class="phase-item">
-                    <span class="phase-label">Phase A:</span>
-                    <span class="phase-value">{{ sensorData.PFa?.toFixed(2) || '0.00' }}</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase B:</span>
-                    <span class="phase-value">{{ sensorData.PFb?.toFixed(2) || '0.00' }}</span>
-                  </div>
-                  <div class="phase-item">
-                    <span class="phase-label">Phase C:</span>
-                    <span class="phase-value">{{ sensorData.PFc?.toFixed(2) || '0.00' }}</span>
-                  </div>
-                </div>
-              </template>
-            </Card>
+            <!-- Power Factor Card -->
+            <DataCard
+              title="Power Factor"
+              :phase-a="sensorData.PFa"
+              :phase-b="sensorData.PFb"
+              :phase-c="sensorData.PFc"
+              unit=""
+              card-class="pf-card"
+              :precision="2"
+            />
           </div>
 
           <!-- Energy and CO2 Section -->
           <div class="energy-co2-section">
-            <Card class="energy-card">
-              <template #title>Energy Consumption</template>
-              <template #content>
-                <div class="energy-data">
-                  <div class="energy-item">
-                    <span class="energy-label">Import Energy:</span>
-                    <span class="energy-value">{{ sensorData.Eim?.toFixed(2) || '0.00' }} kWh</span>
-                  </div>
-                  <div class="energy-item">
-                    <span class="energy-label">Export Energy:</span>
-                    <span class="energy-value">{{ sensorData.Eex?.toFixed(2) || '0.00' }} kWh</span>
-                  </div>
-                  <div class="energy-item">
-                    <span class="energy-label">Total Energy:</span>
-                    <span class="energy-value">{{ sensorData.Ett?.toFixed(2) || '0.00' }} kWh</span>
-                  </div>
-                </div>
-              </template>
-            </Card>
+            <EnergyCard
+              :energy-import="sensorData.Eim"
+              :energy-export="sensorData.Eex"
+              :total-energy="sensorData.Ett"
+            />
 
-            <Card class="co2-card">
-              <template #title>CO2 Emissions</template>
-              <template #content>
-                <div class="co2-data">
-                  <div class="co2-item">
-                    <span class="co2-label">Emission Factor:</span>
-                    <span class="co2-value">{{ emissionFactor }} kg CO2/kWh</span>
-                  </div>
-                  <div class="co2-item">
-                    <span class="co2-label">Total CO2:</span>
-                    <span class="co2-value co2-highlight">{{ totalCO2.toFixed(3) }} kg CO2</span>
-                  </div>
-                  <div class="co2-item">
-                    <span class="co2-label">Daily CO2:</span>
-                    <span class="co2-value">{{ dailyCO2.toFixed(3) }} kg CO2</span>
-                  </div>
-                </div>
-              </template>
-            </Card>
+            <CO2Card
+              :total-co2="totalCO2"
+              :daily-co2="dailyCO2"
+              :emission-factor="emissionFactor"
+            />
           </div>
 
           <!-- Daily Energy Chart -->
-          <Card class="chart-card">
-            <template #title>Daily Energy Consumption & CO2 Emissions</template>
-            <template #content>
-              <div class="chart-container">
-                <Bar v-if="dailyEnergyData.length > 0" :data="chartData" :options="chartOptions" />
-                <div v-else class="no-data-message">
-                  <p>No historical data available for chart display.</p>
-                </div>
-              </div>
-            </template>
-          </Card>
-
-          <!-- Historical Data Table -->
-          <Card class="historical-data-card">
-            <template #title>Recent Historical Data</template>
-            <template #content>
-              <DataTable :value="historicalData" :paginator="true" :rows="10" class="p-datatable-sm">
-                <Column field="timestamp" header="Timestamp" :sortable="true">
-                  <template #body="slotProps">
-                    {{ formatTimestamp(slotProps.data.timestamp) }}
-                  </template>
-                </Column>
-                <Column field="Va" header="Va (V)" :sortable="true">
-                  <template #body="slotProps">
-                    {{ parseFloat(slotProps.data.Va || 0).toFixed(1) }}
-                  </template>
-                </Column>
-                <Column field="Ia" header="Ia (A)" :sortable="true">
-                  <template #body="slotProps">
-                    {{ parseFloat(slotProps.data.Ia || 0).toFixed(2) }}
-                  </template>
-                </Column>
-                <Column field="Pa" header="Pa (W)" :sortable="true">
-                  <template #body="slotProps">
-                    {{ parseFloat(slotProps.data.Pa || 0).toFixed(1) }}
-                  </template>
-                </Column>
-                <Column field="Ett" header="Total Energy (kWh)" :sortable="true">
-                  <template #body="slotProps">
-                    {{ parseFloat(slotProps.data.Ett || 0).toFixed(2) }}
-                  </template>
-                </Column>
-              </DataTable>
-            </template>
-          </Card>
+          <DailyEnergyChart
+            :daily-energy-data="dailyEnergyData"
+            :emission-factor="emissionFactor"
+          />
         </div>
       </TabPanel>
       
@@ -216,26 +105,10 @@ import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import { Bar } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js'
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-)
+import DataCard from '@/components/DataCard.vue'
+import EnergyCard from '@/components/EnergyCard.vue'
+import CO2Card from '@/components/CO2Card.vue'
+import DailyEnergyChart from '@/components/DailyEnergyChart.vue'
 
 export default {
   name: 'DashboardView',
@@ -245,7 +118,10 @@ export default {
     Card,
     DataTable,
     Column,
-    Bar
+    DataCard,
+    EnergyCard,
+    CO2Card,
+    DailyEnergyChart
   },
   setup() {
     const route = useRoute()
@@ -290,96 +166,7 @@ export default {
       return isConnected.value ? '#4CAF50' : '#F44336'
     })
     
-    // Chart data computation
-    const chartData = computed(() => {
-      if (!dailyEnergyData.value.length) {
-        return {
-          labels: [],
-          datasets: []
-        }
-      }
-      
-      return {
-        labels: dailyEnergyData.value.map(item => item.date),
-        datasets: [
-          {
-            label: 'Daily Energy Consumption (kWh)',
-            backgroundColor: '#42A5F5',
-            borderColor: '#1E88E5',
-            borderWidth: 1,
-            data: dailyEnergyData.value.map(item => item.energy)
-          },
-          {
-            label: 'Daily CO2 Emissions (kg)',
-            backgroundColor: '#FF7043',
-            borderColor: '#F4511E',
-            borderWidth: 1,
-            data: dailyEnergyData.value.map(item => item.co2)
-          }
-        ]
-      }
-    })
-    
-    const chartOptions = computed(() => {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Daily Energy Consumption & CO2 Emissions (Last 30 Days)'
-          },
-          legend: {
-            display: true,
-            position: 'top'
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            callbacks: {
-              label: function(context) {
-                const label = context.dataset.label || ''
-                const value = context.parsed.y
-                const unit = label.includes('Energy') ? 'kWh' : 'kg CO2'
-                return `${label}: ${value.toFixed(2)} ${unit}`
-              }
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Energy (kWh) / CO2 (kg)'
-            },
-            ticks: {
-              callback: function(value) {
-                return value.toFixed(1)
-              }
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Date'
-            },
-            ticks: {
-              maxTicksLimit: 10,
-              callback: function(value, index) {
-                const date = new Date(this.getLabelForValue(value))
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-              }
-            }
-          }
-        },
-        interaction: {
-          mode: 'nearest',
-          axis: 'x',
-          intersect: false
-        }
-      }
-    })
+
     
     // MQTT Connection
     const connectMQTT = () => {
@@ -556,8 +343,6 @@ export default {
       connectionStatus,
       connectionStatusIcon,
       connectionStatusColor,
-      chartData,
-      chartOptions,
       formatTimestamp
     }
   }
