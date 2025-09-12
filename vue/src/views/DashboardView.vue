@@ -192,6 +192,7 @@ import { useRoute } from 'vue-router'
 import mqtt from 'mqtt'
 import axios from 'axios'
 import { Chart, registerables } from 'chart.js'
+import 'chartjs-adapter-date-fns'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
@@ -531,21 +532,27 @@ export default {
       
       const ctx = powerChartCanvas.value.getContext('2d')
       
-      // Prepare chart data from todayPowerData
-      const labels = todayPowerData.value.map(item => {
-        const date = new Date(item.time)
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      })
-      
-      const phaseAData = todayPowerData.value.map(item => item.Pa)
-      const phaseBData = todayPowerData.value.map(item => item.Pb)
-      const phaseCData = todayPowerData.value.map(item => item.Pc)
-      const totalPowerData = todayPowerData.value.map(item => item.totalPower)
+      // Prepare chart data from todayPowerData with time series format
+      const phaseAData = todayPowerData.value.map(item => ({
+        x: new Date(item.time),
+        y: item.Pa
+      }))
+      const phaseBData = todayPowerData.value.map(item => ({
+        x: new Date(item.time),
+        y: item.Pb
+      }))
+      const phaseCData = todayPowerData.value.map(item => ({
+        x: new Date(item.time),
+        y: item.Pc
+      }))
+      const totalPowerData = todayPowerData.value.map(item => ({
+        x: new Date(item.time),
+        y: item.totalPower
+      }))
       
       powerChart.value = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
           datasets: [
             {
               label: 'Phase A',
@@ -604,13 +611,22 @@ export default {
           },
           scales: {
             x: {
+              type: 'time',
               display: true,
               title: {
                 display: true,
                 text: 'Time'
               },
+              time: {
+                displayFormats: {
+                  minute: 'HH:mm',
+                  hour: 'HH:mm'
+                },
+                tooltipFormat: 'MMM dd, HH:mm:ss'
+              },
               ticks: {
-                maxTicksLimit: 10
+                maxTicksLimit: 10,
+                source: 'auto'
               }
             },
             y: {
@@ -633,16 +649,23 @@ export default {
     // Update power chart with new data
     const updatePowerChart = () => {
       if (powerChart.value && todayPowerData.value.length > 0) {
-        const labels = todayPowerData.value.map(item => {
-          const date = new Date(item.time)
-          return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-        })
-        
-        powerChart.value.data.labels = labels
-        powerChart.value.data.datasets[0].data = todayPowerData.value.map(item => item.Pa)
-        powerChart.value.data.datasets[1].data = todayPowerData.value.map(item => item.Pb)
-        powerChart.value.data.datasets[2].data = todayPowerData.value.map(item => item.Pc)
-        powerChart.value.data.datasets[3].data = todayPowerData.value.map(item => item.totalPower)
+        // Update datasets with time series format (x,y coordinates)
+        powerChart.value.data.datasets[0].data = todayPowerData.value.map(item => ({
+          x: new Date(item.time),
+          y: item.Pa
+        }))
+        powerChart.value.data.datasets[1].data = todayPowerData.value.map(item => ({
+          x: new Date(item.time),
+          y: item.Pb
+        }))
+        powerChart.value.data.datasets[2].data = todayPowerData.value.map(item => ({
+          x: new Date(item.time),
+          y: item.Pc
+        }))
+        powerChart.value.data.datasets[3].data = todayPowerData.value.map(item => ({
+          x: new Date(item.time),
+          y: item.totalPower
+        }))
         
         powerChart.value.update()
       }
