@@ -5,6 +5,7 @@ const express = require('express');
 const aedes = require('aedes')();
 const net = require('net');
 const http = require('http');
+const WebSocket = require('ws');
 const { 
   initializeDatabase, 
   startPeriodicReconnection, 
@@ -19,6 +20,7 @@ const { validatePowerMeterData, validateEspId } = require('./utils/validation');
 const app = express();
 const port = process.env.PORT || 3000;
 const mqttPort = process.env.MQTT_PORT || 1883;
+const wsPort = process.env.WS_PORT || 8083;
 
 // Middleware
 app.use(express.json());
@@ -38,6 +40,7 @@ app.use((req, res, next) => {
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const { auth } = require('./middleware/auth');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -265,6 +268,24 @@ app.get('/api/sensor-data', (req, res) => {
   res.status(503).json({ error: 'Sensor service not available' });
 });
 
+// Get sensor data by ESP ID
+app.get('/api/sensor-data/:espId', auth, async (req, res) => {
+  try {
+    const { espId } = req.params;
+    const limit = req.query.limit || 100;
+    
+    if (!sensorService) {
+      return res.status(503).json({ error: 'Sensor service not available' });
+    }
+    
+    const data = await sensorService.getHistoricalData(espId, limit);
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching sensor data:', error);
+    res.status(500).json({ error: 'Failed to fetch sensor data' });
+  }
+});
+
 // Initialize database and start servers
 // Function to initialize services
 const initializeServices = async () => {
@@ -349,6 +370,26 @@ const startServer = async () => {
       console.log(`📱 MQTT Connection: mqtt://localhost:${mqttPort}`);
     });
 
+    // Start WebSocket server for MQTT over WebSocket
+    const wsServer = new WebSocket.Server({ 
+      port: wsPort,
+      perMessageDeflate: false
+    });
+    
+    wsServer.on('connection', (ws, req) => {
+      const stream = WebSocket.createWebSocketStream(ws);
+      aedes.handle(stream);
+    });
+    
+    wsServer.on('listening', () => {
+      console.log(`🌐 MQTT WebSocket server running on port ${wsPort}`);
+      console.log(`📱 WebSocket MQTT Connection: ws://localhost:${wsPort}/mqtt`);
+    });
+    
+    wsServer.on('error', (error) => {
+      console.error('❌ WebSocket server error:', error);
+    });
+
     // Graceful shutdown
     process.on('SIGINT', () => {
       console.log('\n🛑 Shutting down servers...');
@@ -364,6 +405,9 @@ const startServer = async () => {
       });
       mqttServer.close(() => {
         console.log('MQTT server closed');
+      });
+      wsServer.close(() => {
+        console.log('WebSocket server closed');
       });
       aedes.close(() => {
         console.log('Aedes broker closed');

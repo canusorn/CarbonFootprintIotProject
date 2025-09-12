@@ -193,6 +193,11 @@ class SensorService {
     }
   }
 
+  async getHistoricalData(espId, limit = 100) {
+    // Use the existing getLatestData method with a higher limit for historical data
+    return await this.getLatestData(espId, limit);
+  }
+
   async close() {
     // Don't close the shared pool, just reset the reference
     // The pool is managed by the database configuration

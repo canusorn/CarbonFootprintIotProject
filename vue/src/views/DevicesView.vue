@@ -136,9 +136,9 @@ export default {
     }
     
     const viewSensorData = (espId) => {
-      // TODO: Navigate to sensor data view
+      // Navigate to device dashboard with espId parameter
       console.log('View sensor data for:', espId)
-      alert(`Sensor data view for ${espId} - Feature coming soon!`)
+      router.push(`/devices/${espId}`)
     }
     
     const editDevice = (device) => {

@@ -8,10 +8,7 @@ const dbConfig = {
   database: process.env.DB_NAME || 'carbon_footprint_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  queueLimit: 0
 };
 
 // Sensor database configuration (for time series sensor data)
@@ -22,10 +19,7 @@ const sensorDbConfig = {
   database: 'sensor',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  queueLimit: 0
 };
 
 // Connection pools (will be created when database is available)
