@@ -22,9 +22,15 @@
               <h3>Today's Energy</h3>
             </div>
             <div class="energy-card-content">
-              <div class="energy-value">
-                <span class="value">{{ todayEnergyData.todayEnergy.toFixed(2) }}</span>
-                <span class="unit">kWh</span>
+              <div class="energy-values-row">
+                <div class="energy-value">
+                  <span class="value">{{ todayEnergyData.todayEnergy.toFixed(2) }}</span>
+                  <span class="unit">kWh</span>
+                </div>
+                <div class="energy-value co2-emission">
+                  <span class="value">{{ formatCO2(dailyCO2, 2) }}</span>
+                  <span class="unit">kgCO2e</span>
+                </div>
               </div>
               <div class="energy-details">
                 <div class="detail-item">
@@ -34,10 +40,6 @@
                 <div class="detail-item">
                   <span class="label">Current:</span>
                   <span class="value">{{ todayEnergyData.endEnergy.toFixed(2) }} kWh</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Records:</span>
-                  <span class="value">{{ todayEnergyData.recordCount }}</span>
                 </div>
               </div>
             </div>
@@ -331,7 +333,22 @@ export default {
             if (topic === `${espId.value}/update`) {
               const data = JSON.parse(message.toString())
               sensorData.value = { ...sensorData.value, ...data }
+              
+              // Update today's energy calculation when new MQTT data arrives
+              if (data.Ett !== undefined && todayEnergyData.value.startEnergy > 0) {
+                const currentEnergy = parseFloat(data.Ett)
+                const calculatedTodayEnergy = currentEnergy - todayEnergyData.value.startEnergy
+                
+                // Update today's energy data
+                todayEnergyData.value = {
+                  ...todayEnergyData.value,
+                  todayEnergy: Math.max(0, calculatedTodayEnergy), // Ensure non-negative
+                  endEnergy: currentEnergy
+                }
+              }
+              
               console.log('Received sensor data:', data)
+              console.log('Updated today energy:', todayEnergyData.value.todayEnergy)
             }
           } catch (error) {
             console.error('Error parsing MQTT message:', error)
