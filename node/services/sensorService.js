@@ -252,11 +252,18 @@ class SensorService {
       console.log(`✅ Daily energy calculation completed for ESP ${espId} in ${duration}ms (${rows.length} days)`);
       
       // Format the results
-      const result = rows.map(row => ({
-        date: row.date.toISOString().split('T')[0],
-        energy: Math.max(0, parseFloat(row.daily_energy) || 0),
-        recordCount: parseInt(row.record_count) || 0
-      }));
+      const result = rows.map(row => {
+        const adjustedDate = new Date(row.date);
+        adjustedDate.setDate(adjustedDate.getDate() + 1);
+        // Handle UTC+7 timezone offset
+        const utcTime = adjustedDate.getTime() + (adjustedDate.getTimezoneOffset() * 60000);
+        const localTime = new Date(utcTime + (7 * 3600000)); // UTC+7
+        return {
+          date: localTime.toISOString().split('T')[0],
+          energy: Math.max(0, parseFloat(row.daily_energy) || 0),
+          recordCount: parseInt(row.record_count) || 0
+        };
+      });
       
       return result;
       

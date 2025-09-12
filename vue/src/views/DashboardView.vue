@@ -391,11 +391,12 @@ export default {
         const token = localStorage.getItem('token')
         
         // Fetch latest sensor data for dashboard display
-        const sensorResponse = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}?limit=50`, {
+        const sensorResponse = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
+        console.log('Fetched sensor data:', sensorResponse.data)
         
         // Validate sensor response data
         if (!sensorResponse.data || !Array.isArray(sensorResponse.data)) {
@@ -439,7 +440,7 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-        
+        console.log('Fetched daily energy data:', dailyResponse.data)
         // Validate daily energy response data
         if (!dailyResponse.data || !Array.isArray(dailyResponse.data)) {
           console.warn('Invalid daily energy response data format:', dailyResponse.data)
