@@ -595,6 +595,7 @@ export default {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          spanGaps: 60*60*1000, // 1 Hours
           plugins: {
             title: {
               display: true,
@@ -861,7 +862,7 @@ export default {
 
 /* Today Energy Card Styles */
 .today-energy-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2d661f 0%, #3b860f 100%);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
