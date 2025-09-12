@@ -150,7 +150,7 @@ aedes.authenticate = (client, username, password, callback) => {
       console.log(`✅ MQTT Authentication successful for client ${client.id}`);
       
       // Save ESP device information to database
-      if (deviceService) {
+      if (deviceService && !client.id.startsWith("WEB")) {
         deviceService.saveEspDevice(client.id, client.id, username).catch(error => {
           console.error('Failed to save ESP device during authentication:', error.message);
         });

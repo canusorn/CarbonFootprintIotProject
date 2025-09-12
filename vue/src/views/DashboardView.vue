@@ -148,6 +148,19 @@
             </Card>
           </div>
 
+          <!-- Daily Energy Chart -->
+          <Card class="chart-card">
+            <template #title>Daily Energy Consumption & CO2 Emissions</template>
+            <template #content>
+              <div class="chart-container">
+                <Bar v-if="dailyEnergyData.length > 0" :data="chartData" :options="chartOptions" />
+                <div v-else class="no-data-message">
+                  <p>No historical data available for chart display.</p>
+                </div>
+              </div>
+            </template>
+          </Card>
+
           <!-- Historical Data Table -->
           <Card class="historical-data-card">
             <template #title>Recent Historical Data</template>
@@ -203,6 +216,26 @@ import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import { Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 export default {
   name: 'DashboardView',
@@ -211,7 +244,8 @@ export default {
     TabPanel,
     Card,
     DataTable,
-    Column
+    Column,
+    Bar
   },
   setup() {
     const route = useRoute()
@@ -224,6 +258,7 @@ export default {
     })
     
     const historicalData = ref([])
+    const dailyEnergyData = ref([])
     const mqttClient = ref(null)
     const isConnected = ref(false)
     const emissionFactor = ref(0.5) // kg CO2 per kWh (example factor)
@@ -253,6 +288,97 @@ export default {
     
     const connectionStatusColor = computed(() => {
       return isConnected.value ? '#4CAF50' : '#F44336'
+    })
+    
+    // Chart data computation
+    const chartData = computed(() => {
+      if (!dailyEnergyData.value.length) {
+        return {
+          labels: [],
+          datasets: []
+        }
+      }
+      
+      return {
+        labels: dailyEnergyData.value.map(item => item.date),
+        datasets: [
+          {
+            label: 'Daily Energy Consumption (kWh)',
+            backgroundColor: '#42A5F5',
+            borderColor: '#1E88E5',
+            borderWidth: 1,
+            data: dailyEnergyData.value.map(item => item.energy)
+          },
+          {
+            label: 'Daily CO2 Emissions (kg)',
+            backgroundColor: '#FF7043',
+            borderColor: '#F4511E',
+            borderWidth: 1,
+            data: dailyEnergyData.value.map(item => item.co2)
+          }
+        ]
+      }
+    })
+    
+    const chartOptions = computed(() => {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+        display: true,
+        text: 'Daily Energy Consumption & CO2 Emissions'
+      },
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                const label = context.dataset.label || ''
+                const value = context.parsed.y
+                const unit = label.includes('Energy') ? 'kWh' : 'kg CO2'
+                return `${label}: ${value.toFixed(2)} ${unit}`
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Energy (kWh) / CO2 (kg)'
+            },
+            ticks: {
+              callback: function(value) {
+                return value.toFixed(1)
+              }
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Date'
+            },
+            ticks: {
+              maxTicksLimit: 10,
+              callback: function(value, index) {
+                const date = new Date(this.getLabelForValue(value))
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              }
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
     })
     
     // MQTT Connection
@@ -322,6 +448,115 @@ export default {
       }
     }
     
+    // Calculate daily energy consumption from historical data (last 30 days)
+    const calculateDailyEnergy = (data) => {
+
+      if (!data || data.length === 0) {
+        console.warn('No data provided for daily energy calculation')
+        return []
+      }
+      
+      try {
+        // Group data by date and validate timestamps
+        const dailyData = {}
+        
+        data.forEach(record => {
+          // Validate time field exists
+          if (!record.time) {
+            console.warn('Missing time field in record:', record)
+            return
+          }
+          
+          try {
+            // Validate date creation
+            const date = new Date(record.time)
+            if (isNaN(date.getTime())) {
+              console.warn('Invalid time value:', record.time)
+              return
+            }
+            
+            const dateKey = date.toISOString().split('T')[0]
+            
+            if (!dailyData[dateKey]) {
+              dailyData[dateKey] = []
+            }
+            dailyData[dateKey].push(record)
+          } catch (dateError) {
+            console.warn('Error processing time field:', record.time, dateError)
+          }
+        })
+        
+        // Get all unique dates from the data and sort them
+        const allDates = Object.keys(dailyData).sort()
+        
+        // Calculate daily energy for each date with data
+        const result = []
+        
+        allDates.forEach(dateKey => {
+          let dailyEnergy = 0
+          let co2Emissions = 0
+          
+          console.log(`\n=== Processing date: ${dateKey} ===`)
+          
+          if (dailyData[dateKey] && dailyData[dateKey].length > 0) {
+            try {
+              const dayRecords = dailyData[dateKey]
+              console.log(`Records for ${dateKey}:`, dayRecords.length)
+              
+              // Sort records by time to get first and last
+              dayRecords.sort((a, b) => {
+                try {
+                  return new Date(a.time) - new Date(b.time)
+                } catch (sortError) {
+                  console.warn('Error sorting records by time:', sortError)
+                  return 0
+                }
+              })
+              
+              const firstRecord = dayRecords[0]
+              const lastRecord = dayRecords[dayRecords.length - 1]
+              
+              console.log(`First record Ett: ${firstRecord.Ett}, time: ${firstRecord.time}`)
+              console.log(`Last record Ett: ${lastRecord.Ett}, time: ${lastRecord.time}`)
+              
+              // Calculate daily energy consumption (last - first Ett value)
+              const firstEtt = parseFloat(firstRecord.Ett || 0)
+              const lastEtt = parseFloat(lastRecord.Ett || 0)
+              dailyEnergy = lastEtt - firstEtt
+              
+              console.log(`Energy calculation: ${lastEtt} - ${firstEtt} = ${dailyEnergy}`)
+              
+              dailyEnergy = Math.max(0, dailyEnergy) // Ensure non-negative
+              
+              console.log(`Final daily energy after max(0, x): ${dailyEnergy}`)
+              
+              // Calculate CO2 emissions
+              co2Emissions = dailyEnergy * emissionFactor.value
+              
+              console.log(`CO2 emissions: ${dailyEnergy} * ${emissionFactor.value} = ${co2Emissions}`)
+            } catch (dayError) {
+              console.warn('Error calculating daily energy for date:', dateKey, dayError)
+            }
+          } else {
+            console.log(`No data found for ${dateKey}`)
+          }
+          
+          console.log(`Final result for ${dateKey}: energy=${dailyEnergy}, co2=${Math.max(0, co2Emissions)}`)
+          
+          result.push({
+            date: dateKey,
+            energy: dailyEnergy,
+            co2: Math.max(0, co2Emissions)
+          })
+        })
+        
+        return result
+      } catch (error) {
+        console.error('Error in calculateDailyEnergy:', error)
+        return []
+      }
+    }
+    
     // Fetch historical data from backend
     const fetchHistoricalData = async () => {
       try {
@@ -331,33 +566,58 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
+        
+        // Validate response data
+        if (!response.data || !Array.isArray(response.data)) {
+          console.warn('Invalid response data format:', response.data)
+          historicalData.value = []
+          dailyEnergyData.value = []
+          return
+        }
+        
         historicalData.value = response.data
-        console.log(response.data);
+        console.log('Fetched historical data:', response.data.length, 'records')
+        
+        // Calculate daily energy data for chart with error handling
+        try {
+          dailyEnergyData.value = calculateDailyEnergy(response.data)
+          console.log('Daily energy data calculated:', dailyEnergyData.value.length, 'days')
+        } catch (chartError) {
+          console.error('Error calculating daily energy data:', chartError)
+          dailyEnergyData.value = []
+        }
         
         // Set initial dashboard values from latest historical data
         if (response.data && response.data.length > 0) {
-          const latestData = response.data[response.data.length - 1]
-          sensorData.value = {
-            Va: parseFloat(latestData.Va || 0),
-            Vb: parseFloat(latestData.Vb || 0),
-            Vc: parseFloat(latestData.Vc || 0),
-            Ia: parseFloat(latestData.Ia || 0),
-            Ib: parseFloat(latestData.Ib || 0),
-            Ic: parseFloat(latestData.Ic || 0),
-            Pa: parseFloat(latestData.Pa || 0),
-            Pb: parseFloat(latestData.Pb || 0),
-            Pc: parseFloat(latestData.Pc || 0),
-            PFa: parseFloat(latestData.PFa || 0),
-            PFb: parseFloat(latestData.PFb || 0),
-            PFc: parseFloat(latestData.PFc || 0),
-            Eim: parseFloat(latestData.Eim || 0),
-            Eex: parseFloat(latestData.Eex || 0),
-            Ett: parseFloat(latestData.Ett || 0)
+          try {
+            const latestData = response.data[response.data.length - 1]
+            sensorData.value = {
+              Va: parseFloat(latestData.Va || 0),
+              Vb: parseFloat(latestData.Vb || 0),
+              Vc: parseFloat(latestData.Vc || 0),
+              Ia: parseFloat(latestData.Ia || 0),
+              Ib: parseFloat(latestData.Ib || 0),
+              Ic: parseFloat(latestData.Ic || 0),
+              Pa: parseFloat(latestData.Pa || 0),
+              Pb: parseFloat(latestData.Pb || 0),
+              Pc: parseFloat(latestData.Pc || 0),
+              PFa: parseFloat(latestData.PFa || 0),
+              PFb: parseFloat(latestData.PFb || 0),
+              PFc: parseFloat(latestData.PFc || 0),
+              Eim: parseFloat(latestData.Eim || 0),
+              Eex: parseFloat(latestData.Eex || 0),
+              Ett: parseFloat(latestData.Ett || 0)
+            }
+            console.log('Initial dashboard values set from historical data')
+          } catch (dataError) {
+            console.error('Error setting initial dashboard values:', dataError)
           }
-          console.log('Initial dashboard values set from historical data:', sensorData.value)
         }
       } catch (error) {
         console.error('Error fetching historical data:', error)
+        // Set empty arrays to prevent further errors
+        historicalData.value = []
+        dailyEnergyData.value = []
       }
     }
     
@@ -379,6 +639,7 @@ export default {
     return {
       sensorData,
       historicalData,
+      dailyEnergyData,
       isConnected,
       emissionFactor,
       totalPower,
@@ -387,6 +648,8 @@ export default {
       connectionStatus,
       connectionStatusIcon,
       connectionStatusColor,
+      chartData,
+      chartOptions,
       formatTimestamp
     }
   }
@@ -540,6 +803,27 @@ export default {
   color: #F44336;
   font-size: 1.3rem;
   font-weight: 700;
+}
+
+.chart-card {
+  margin-bottom: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-left: 4px solid #673AB7;
+}
+
+.chart-container {
+  height: 400px;
+  position: relative;
+}
+
+.no-data-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #666;
+  font-size: 1.1rem;
 }
 
 .historical-data-card {

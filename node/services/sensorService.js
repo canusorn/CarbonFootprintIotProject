@@ -42,7 +42,7 @@ class SensorService {
       throw new Error('Database connection not initialized');
     }
 
-    const tableName = `esp_${espId}`;
+    const tableName = `${espId}`;
     
     try {
       console.log(`🔄 Creating/verifying table for ESP: ${espId}`);
@@ -174,7 +174,7 @@ class SensorService {
       throw new Error('Database connection not initialized');
     }
 
-    const tableName = `esp_${espId}`;
+    const tableName = `${espId}`;
     const selectQuery = `
       SELECT * FROM \`${tableName}\`
       ORDER BY created_at DESC
