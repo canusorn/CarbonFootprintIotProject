@@ -346,6 +346,36 @@ export default {
                   todayEnergy: Math.max(0, calculatedTodayEnergy), // Ensure non-negative
                   endEnergy: currentEnergy
                 }
+                
+                // Update DailyEnergyChart with today's real-time data
+                const todayDate = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+                const todayEnergy = Math.max(0, calculatedTodayEnergy)
+                const todayCO2 = todayEnergy * emissionFactor.value
+                
+                // Find today's entry in dailyEnergyData or create new one
+                const todayIndex = dailyEnergyData.value.findIndex(item => item.date === todayDate)
+                
+                if (todayIndex >= 0) {
+                  // Update existing today's entry
+                  dailyEnergyData.value[todayIndex] = {
+                    ...dailyEnergyData.value[todayIndex],
+                    energy: todayEnergy,
+                    co2: todayCO2
+                  }
+                } else {
+                  // Add new entry for today
+                  dailyEnergyData.value.push({
+                    date: todayDate,
+                    energy: todayEnergy,
+                    co2: todayCO2,
+                    recordCount: 1
+                  })
+                  
+                  // Keep only last 30 days
+                  if (dailyEnergyData.value.length > 30) {
+                    dailyEnergyData.value = dailyEnergyData.value.slice(-30)
+                  }
+                }
               }
               
               // Add new data point to todayPowerData for synchronization
