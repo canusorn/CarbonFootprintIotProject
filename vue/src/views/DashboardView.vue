@@ -1,41 +1,60 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <div class="device-info-section">
-        <div class="device-name-container">
-          <i class="pi pi-microchip" style="color: #3498db; margin-right: 8px;"></i>
-          <div v-if="!isEditingDeviceName" class="device-name-display">
-            <span class="device-name">{{ currentDevice.name || 'Unknown Device' }}</span>
-            <span class="device-id">({{ espId }})</span>
-            <Button 
-              icon="pi pi-pencil" 
-              class="p-button-text p-button-sm edit-btn"
-              @click="startEditingDeviceName"
-              v-tooltip="'Edit device name'"
-            />
+      <div class="header-left">
+        <h1>Carbon Footprint Dashboard</h1>
+      </div>
+      <div class="header-center">
+        <div class="device-info-section">
+          <div class="device-name-container">
+            <i class="pi pi-microchip" style="color: #3498db; margin-right: 8px;"></i>
+            <div v-if="!isEditingDeviceName" class="device-name-display">
+              <span class="device-name">{{ currentDevice.name || 'Unknown Device' }}</span>
+              <span class="device-id">({{ espId }})</span>
+              <Button 
+                icon="pi pi-pencil" 
+                class="p-button-text p-button-sm edit-btn"
+                @click="startEditingDeviceName"
+                v-tooltip="'Edit device name'"
+              />
+            </div>
+            <div v-else class="device-name-edit">
+              <InputText 
+                v-model="editingDeviceName" 
+                class="device-name-input"
+                @keyup.enter="saveDeviceName"
+                @keyup.escape="cancelEditingDeviceName"
+                ref="deviceNameInput"
+              />
+              <Button 
+                icon="pi pi-check" 
+                class="p-button-success p-button-sm save-btn"
+                @click="saveDeviceName"
+                :loading="isSavingDeviceName"
+                v-tooltip="'Save'"
+              />
+              <Button 
+                icon="pi pi-times" 
+                class="p-button-text p-button-sm cancel-btn"
+                @click="cancelEditingDeviceName"
+                v-tooltip="'Cancel'"
+              />
+            </div>
           </div>
-          <div v-else class="device-name-edit">
-            <InputText 
-              v-model="editingDeviceName" 
-              class="device-name-input"
-              @keyup.enter="saveDeviceName"
-              @keyup.escape="cancelEditingDeviceName"
-              ref="deviceNameInput"
-            />
-            <Button 
-              icon="pi pi-check" 
-              class="p-button-success p-button-sm save-btn"
-              @click="saveDeviceName"
-              :loading="isSavingDeviceName"
-              v-tooltip="'Save'"
-            />
-            <Button 
-              icon="pi pi-times" 
-              class="p-button-text p-button-sm cancel-btn"
-              @click="cancelEditingDeviceName"
-              v-tooltip="'Cancel'"
-            />
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="account-section">
+          <div class="user-info">
+            <i class="pi pi-user" style="color: #2c3e50; margin-right: 8px;"></i>
+            <span class="user-email">{{ userEmail }}</span>
           </div>
+          <Button 
+            icon="pi pi-sign-out" 
+            class="p-button-text p-button-sm logout-btn"
+            @click="logout"
+            v-tooltip="'Logout'"
+          />
         </div>
       </div>
     </div>
@@ -224,7 +243,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import mqtt from 'mqtt'
 import axios from 'axios'
 import { Chart, registerables } from 'chart.js'
@@ -268,6 +287,7 @@ export default {
   },
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const sensorData = ref({
       Va: 0, Vb: 0, Vc: 0,
       Ia: 0, Ib: 0, Ic: 0,
@@ -300,6 +320,9 @@ export default {
     const editingDeviceName = ref('')
     const isSavingDeviceName = ref(false)
     const deviceNameInput = ref(null)
+    
+    // User account management
+    const userEmail = ref('')
     
     // Computed properties
     const totalPower = computed(() => {
@@ -560,6 +583,32 @@ export default {
       } finally {
         isSavingDeviceName.value = false
       }
+    }
+    
+    // User account management methods
+    const getUserEmailFromToken = () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (token) {
+          // Decode JWT token to get user email
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          userEmail.value = payload.email || 'Unknown User'
+        } else {
+          userEmail.value = 'Not logged in'
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error)
+        userEmail.value = 'Unknown User'
+      }
+    }
+    
+    const logout = () => {
+      // Clear authentication token
+      localStorage.removeItem('token')
+      // Disconnect MQTT if connected
+      disconnectMQTT()
+      // Redirect to home page
+      router.push('/')
     }
     
     // Fetch historical data from backend
@@ -880,6 +929,7 @@ export default {
     
     // Lifecycle hooks
     onMounted(async () => {
+      getUserEmailFromToken()
       connectMQTT()
       fetchDeviceInfo()
       fetchHistoricalData()
@@ -929,7 +979,11 @@ export default {
       deviceNameInput,
       startEditingDeviceName,
       cancelEditingDeviceName,
-      saveDeviceName
+      saveDeviceName,
+      // User account management
+      userEmail,
+      logout,
+      router
     }
   }
 }
@@ -946,16 +1000,28 @@ export default {
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   gap: 20px;
+  min-height: 60px;
 }
 
-.dashboard-header h1 {
+.header-left h1 {
   color: #2c3e50;
   font-size: 2.5rem;
   font-weight: 600;
   margin: 0;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
 }
 
 .device-info-section {
@@ -1006,10 +1072,55 @@ export default {
   min-width: auto !important;
 }
 
+/* Account section styles */
+.account-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-email {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  padding: 4px 8px !important;
+  min-width: auto !important;
+  color: #dc3545 !important;
+}
+
+.logout-btn:hover {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+  
+  .header-center {
+    order: 2;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .header-right {
+    order: 1;
+    align-self: flex-end;
   }
   
   .device-info-section {
@@ -1018,6 +1129,14 @@ export default {
   
   .device-name-input {
     min-width: 150px;
+  }
+  
+  .user-email {
+    display: none;
+  }
+  
+  .account-section {
+    padding: 6px 8px;
   }
 }
 
