@@ -332,6 +332,30 @@ export default {
           }
         })
         historicalData.value = response.data
+        console.log(response.data);
+        
+        // Set initial dashboard values from latest historical data
+        if (response.data && response.data.length > 0) {
+          const latestData = response.data[response.data.length - 1]
+          sensorData.value = {
+            Va: parseFloat(latestData.Va || 0),
+            Vb: parseFloat(latestData.Vb || 0),
+            Vc: parseFloat(latestData.Vc || 0),
+            Ia: parseFloat(latestData.Ia || 0),
+            Ib: parseFloat(latestData.Ib || 0),
+            Ic: parseFloat(latestData.Ic || 0),
+            Pa: parseFloat(latestData.Pa || 0),
+            Pb: parseFloat(latestData.Pb || 0),
+            Pc: parseFloat(latestData.Pc || 0),
+            PFa: parseFloat(latestData.PFa || 0),
+            PFb: parseFloat(latestData.PFb || 0),
+            PFc: parseFloat(latestData.PFc || 0),
+            Eim: parseFloat(latestData.Eim || 0),
+            Eex: parseFloat(latestData.Eex || 0),
+            Ett: parseFloat(latestData.Ett || 0)
+          }
+          console.log('Initial dashboard values set from historical data:', sensorData.value)
+        }
       } catch (error) {
         console.error('Error fetching historical data:', error)
       }
