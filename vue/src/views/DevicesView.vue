@@ -132,7 +132,7 @@ export default {
     
     const formatDate = (dateString) => {
       if (!dateString) return 'N/A'
-      return new Date(dateString).toLocaleString()
+      return new Date(dateString).toLocaleDateString('en-GB')
     }
     
     const viewSensorData = (espId) => {
