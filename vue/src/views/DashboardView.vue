@@ -584,24 +584,20 @@ export default {
       
       const ctx = powerChartCanvas.value.getContext('2d')
       
-      // Limit initial data to prevent memory issues
-      const maxInitialPoints = 50
-      const limitedData = todayPowerData.value.slice(-maxInitialPoints)
-      
-      // Prepare chart data from todayPowerData with time series format
-      const phaseAData = limitedData.map(item => ({
+      // Prepare chart data from todayPowerData with time series format (no limit)
+      const phaseAData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
         y: item.Pa
       }))
-      const phaseBData = limitedData.map(item => ({
+      const phaseBData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
         y: item.Pb
       }))
-      const phaseCData = limitedData.map(item => ({
+      const phaseCData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
         y: item.Pc
       }))
-      const totalPowerData = limitedData.map(item => ({
+      const totalPowerData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
         y: item.totalPower
       }))
