@@ -662,6 +662,7 @@ export default {
               }
             }
           },
+          events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'], // Explicitly define events
           plugins: {
             title: {
               display: true,
@@ -674,6 +675,11 @@ export default {
             legend: {
               display: true,
               position: 'top'
+            },
+            tooltip: {
+              enabled: true,
+              mode: 'index',
+              intersect: false
             }
           },
           scales: {
@@ -708,143 +714,42 @@ export default {
           interaction: {
             intersect: false,
             mode: 'index'
-          }
+          },
+          onHover: null, // Disable hover events to prevent undefined errors
+          onClick: null  // Disable click events to prevent undefined errors
         }
       })
     }
     
     // Update power chart with new data
     const updatePowerChart = () => {
-      if (powerChart.value && todayPowerData.value.length > 0) {
-        // Limit data to prevent memory issues
-        const maxPoints = 50
-        const limitedData = todayPowerData.value.slice(-maxPoints)
-        
-        // Update datasets with time series format (x,y coordinates)
-        powerChart.value.data.datasets[0].data = limitedData.map(item => ({
-          x: new Date(item.time),
-          y: item.Pa
-        }))
-        powerChart.value.data.datasets[1].data = limitedData.map(item => ({
-          x: new Date(item.time),
-          y: item.Pb
-        }))
-        powerChart.value.data.datasets[2].data = limitedData.map(item => ({
-          x: new Date(item.time),
-          y: item.Pc
-        }))
-        powerChart.value.data.datasets[3].data = limitedData.map(item => ({
-          x: new Date(item.time),
-          y: item.totalPower
-        }))
-        
-        try {
-          powerChart.value.update('none')
-        } catch (error) {
-          console.warn('Error updating power chart:', error)
-        }
-      }
+      // Simply recreate the chart to avoid update errors
+      createPowerChart()
     }
     
-    // Prevent stack overflow with very conservative updates
-    let updateQueue = []
-    let isUpdating = false
-    const MAX_QUEUE_SIZE = 5
-    const UPDATE_DELAY = 2000 // 2 seconds between updates
+    // Simplified real-time update - recreate chart to avoid errors
+    let lastUpdateTime = 0
+    const UPDATE_THROTTLE = 5000 // 5 seconds between updates
     
-    // Update power chart with real-time MQTT data - ultra conservative approach
     const updatePowerChartRealtime = (updateVar) => {
-      if (!powerChart.value || !updateVar) return
+      if (!updateVar) return
       
-      // Add to queue if not full
-      if (updateQueue.length < MAX_QUEUE_SIZE) {
-        updateQueue.push({
-          Pa: parseFloat(updateVar.Pa || 0),
-          Pb: parseFloat(updateVar.Pb || 0),
-          Pc: parseFloat(updateVar.Pc || 0),
-          time: new Date()
-        })
+      const now = Date.now()
+      if (now - lastUpdateTime < UPDATE_THROTTLE) {
+        return // Throttle updates
       }
       
-      // Process queue if not already processing
-      if (!isUpdating && updateQueue.length > 0) {
-        processUpdateQueue()
+      lastUpdateTime = now
+      
+      // Simply recreate the chart with latest data
+      try {
+        createPowerChart()
+      } catch (error) {
+        console.warn('Error recreating power chart:', error)
       }
     }
     
-    const processUpdateQueue = () => {
-      if (updateQueue.length === 0) {
-        isUpdating = false
-        return
-      }
-      
-      isUpdating = true
-      
-      try {
-        const datasets = powerChart.value.data.datasets
-        if (!datasets || datasets.length < 4) {
-          isUpdating = false
-          return
-        }
-        
-        // Process one update at a time
-        const update = updateQueue.shift()
-        const totalPower = update.Pa + update.Pb + update.Pc
-        
-        // Check for valid data
-        if (isNaN(update.Pa) || isNaN(update.Pb) || isNaN(update.Pc) || isNaN(totalPower)) {
-          isUpdating = false
-          setTimeout(processUpdateQueue, UPDATE_DELAY)
-          return
-        }
-        
-        const maxPoints = 10 // Very small dataset
-        
-        // Use direct array manipulation to avoid Chart.js internal issues
-        for (let i = 0; i < 4; i++) {
-          const data = datasets[i].data
-          
-          // Ensure data array exists
-          if (!Array.isArray(data)) {
-            datasets[i].data = []
-          }
-          
-          // Add new point
-          const point = {
-            x: update.time,
-            y: i === 0 ? update.Pa : i === 1 ? update.Pb : i === 2 ? update.Pc : totalPower
-          }
-          
-          datasets[i].data.push(point)
-          
-          // Limit size very aggressively
-          if (datasets[i].data.length > maxPoints) {
-            datasets[i].data = datasets[i].data.slice(-maxPoints)
-          }
-        }
-        
-        // Use try-catch for update with fallback
-        try {
-          powerChart.value.update('none')
-        } catch (chartError) {
-          console.warn('Chart update failed, recreating chart:', chartError)
-          setTimeout(() => {
-            createPowerChart()
-          }, 1000)
-        }
-        
-      } catch (error) {
-        console.error('Critical error in chart update:', error)
-      }
-      
-      // Schedule next update
-      setTimeout(() => {
-        isUpdating = false
-        if (updateQueue.length > 0) {
-          processUpdateQueue()
-        }
-      }, UPDATE_DELAY)
-    }
+
     
     // Format timestamp for display
     const formatTimestamp = (timestamp) => {
