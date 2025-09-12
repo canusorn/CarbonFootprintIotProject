@@ -5,7 +5,12 @@ const express = require('express');
 const aedes = require('aedes')();
 const net = require('net');
 const http = require('http');
-const { initializeDatabase } = require('./config/database');
+const { 
+  initializeDatabase, 
+  startPeriodicReconnection, 
+  getDatabaseStatus,
+  checkDatabaseHealth 
+} = require('./config/database');
 const SensorService = require('./services/sensorService');
 const DeviceService = require('./services/deviceService');
 const { validatePowerMeterData, validateEspId } = require('./utils/validation');
@@ -36,6 +41,40 @@ const authRoutes = require('./routes/auth');
 
 // Use routes
 app.use('/api/auth', authRoutes);
+
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const dbStatus = getDatabaseStatus();
+    const isHealthy = await checkDatabaseHealth();
+    
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      database: {
+        connected: dbStatus.isConnected,
+        healthy: isHealthy,
+        hasPool: dbStatus.hasPool,
+        hasSensorPool: dbStatus.hasSensorPool
+      },
+      services: {
+        sensorService: !!sensorService,
+        deviceService: !!deviceService,
+        deviceRoutes: !!deviceRoutes
+      }
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      database: {
+        connected: false,
+        healthy: false
+      }
+    });
+  }
+});
 
 // Device and sensor data now stored in MySQL database
 // Sensor data is now stored in MySQL database
@@ -227,6 +266,47 @@ app.get('/api/sensor-data', (req, res) => {
 });
 
 // Initialize database and start servers
+// Function to initialize services
+const initializeServices = async () => {
+  try {
+    // Initialize sensor service
+    if (!sensorService) {
+      sensorService = new SensorService();
+    }
+    await sensorService.initialize();
+    console.log('✅ Sensor service initialized');
+  } catch (sensorError) {
+    console.error('⚠️  Sensor service initialization failed:', sensorError.message);
+    sensorService = null;
+  }
+
+  try {
+    // Initialize device service
+    if (!deviceService) {
+      deviceService = new DeviceService();
+    }
+    await deviceService.initialize();
+    console.log('✅ Device service initialized');
+  } catch (deviceError) {
+    console.error('⚠️  Device service initialization failed:', deviceError.message);
+    deviceService = null;
+  }
+
+  // Initialize device routes with the service instances
+  deviceRoutes = createDeviceRoutes(deviceService, sensorService);
+  console.log('✅ Device routes initialized with service instances');
+};
+
+// Reconnection callback function
+const onDatabaseReconnect = async () => {
+  try {
+    await initializeServices();
+    console.log('🎉 All services reinitialized after database reconnection');
+  } catch (error) {
+    console.error('❌ Failed to reinitialize services after database reconnection:', error.message);
+  }
+};
+
 const startServer = async () => {
   let databaseConnected = false;
 
@@ -236,34 +316,19 @@ const startServer = async () => {
     databaseConnected = true;
 
     // Initialize services if database is connected
-    try {
-      sensorService = new SensorService();
-      await sensorService.initialize();
-      console.log('✅ Sensor service initialized');
-    } catch (sensorError) {
-      console.error('⚠️  Sensor service initialization failed:', sensorError.message);
-      sensorService = null;
-    }
-
-    try {
-      deviceService = new DeviceService();
-      await deviceService.initialize();
-      console.log('✅ Device service initialized');
-    } catch (deviceError) {
-      console.error('⚠️  Device service initialization failed:', deviceError.message);
-      deviceService = null;
-    }
-
-    // Initialize device routes with the service instances
-    deviceRoutes = createDeviceRoutes(deviceService, sensorService);
-    console.log('✅ Device routes initialized with service instances');
+    await initializeServices();
 
   } catch (error) {
     console.error('⚠️  Starting server without MySQL database');
     console.error('⚠️  Authentication will not work until MySQL is configured');
     console.error('⚠️  Power meter data will only be stored in memory');
+    console.error('⚠️  Database reconnection will be attempted automatically');
     console.error('⚠️  Please follow the setup instructions above to enable database features\n');
   }
+
+  // Start periodic reconnection attempts
+  const reconnectInterval = startPeriodicReconnection(onDatabaseReconnect);
+  console.log('🔄 Automatic database reconnection enabled (checking every 30 seconds)');
 
   try {
     // Start HTTP server
@@ -287,6 +352,13 @@ const startServer = async () => {
     // Graceful shutdown
     process.on('SIGINT', () => {
       console.log('\n🛑 Shutting down servers...');
+      
+      // Clear reconnection interval
+      if (reconnectInterval) {
+        clearInterval(reconnectInterval);
+        console.log('Database reconnection stopped');
+      }
+      
       httpServer.close(() => {
         console.log('HTTP server closed');
       });
