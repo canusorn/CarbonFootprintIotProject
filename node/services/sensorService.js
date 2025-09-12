@@ -193,7 +193,7 @@ class SensorService {
     }
   }
 
-  async getHistoricalData(espId, limit = 100) {
+  async getHistoricalData(espId, limit = 20000) {
     // Use the existing getLatestData method with a higher limit for historical data
     return await this.getLatestData(espId, limit);
   }

@@ -272,13 +272,12 @@ app.get('/api/sensor-data', (req, res) => {
 app.get('/api/sensor-data/:espId', auth, async (req, res) => {
   try {
     const { espId } = req.params;
-    const limit = req.query.limit || 100;
     
     if (!sensorService) {
       return res.status(503).json({ error: 'Sensor service not available' });
     }
     
-    const data = await sensorService.getHistoricalData(espId, limit);
+    const data = await sensorService.getHistoricalData(espId);
     res.json(data);
   } catch (error) {
     console.error('Error fetching sensor data:', error);
