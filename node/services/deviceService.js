@@ -177,6 +177,44 @@ class DeviceService {
     }
   }
 
+  async updateDeviceName(espId, newName) {
+    try {
+      console.log(`🔄 Updating device name for ESP ID: ${espId} to: ${newName}`);
+      
+      if (!this.connection) {
+        throw new Error('Device service not initialized');
+      }
+      
+      // Update only the device name
+      const updateQuery = `
+        UPDATE device 
+        SET name = ?, updated_at = CURRENT_TIMESTAMP 
+        WHERE espid = ?
+      `;
+      
+      const [result] = await this.connection.execute(updateQuery, [newName, espId]);
+      
+      if (result.affectedRows === 0) {
+        throw new Error(`Device with ESP ID ${espId} not found`);
+      }
+      
+      console.log(`✅ Device name updated successfully for ESP ID: ${espId}`);
+      console.log(`   Affected rows: ${result.affectedRows}`);
+      
+      return {
+        success: true,
+        espId,
+        name: newName,
+        affectedRows: result.affectedRows
+      };
+      
+    } catch (error) {
+      console.error(`❌ Failed to update device name for ESP ID: ${espId}`);
+      console.error(`   Error: ${error.message}`);
+      throw error;
+    }
+  }
+
   async saveEspDevice(espId, name, username) {
     try {
       console.log(`🔄 Saving ESP device: ${espId}`);

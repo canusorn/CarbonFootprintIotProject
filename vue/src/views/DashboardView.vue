@@ -1,7 +1,43 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h1>Carbon Footprint Dashboard</h1>
+      <div class="device-info-section">
+        <div class="device-name-container">
+          <i class="pi pi-microchip" style="color: #3498db; margin-right: 8px;"></i>
+          <div v-if="!isEditingDeviceName" class="device-name-display">
+            <span class="device-name">{{ currentDevice.name || 'Unknown Device' }}</span>
+            <span class="device-id">({{ espId }})</span>
+            <Button 
+              icon="pi pi-pencil" 
+              class="p-button-text p-button-sm edit-btn"
+              @click="startEditingDeviceName"
+              v-tooltip="'Edit device name'"
+            />
+          </div>
+          <div v-else class="device-name-edit">
+            <InputText 
+              v-model="editingDeviceName" 
+              class="device-name-input"
+              @keyup.enter="saveDeviceName"
+              @keyup.escape="cancelEditingDeviceName"
+              ref="deviceNameInput"
+            />
+            <Button 
+              icon="pi pi-check" 
+              class="p-button-success p-button-sm save-btn"
+              @click="saveDeviceName"
+              :loading="isSavingDeviceName"
+              v-tooltip="'Save'"
+            />
+            <Button 
+              icon="pi pi-times" 
+              class="p-button-text p-button-sm cancel-btn"
+              @click="cancelEditingDeviceName"
+              v-tooltip="'Cancel'"
+            />
+          </div>
+        </div>
+      </div>
     </div>
     
     <TabView>
@@ -198,6 +234,8 @@ import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
 import DataCard from '@/components/DataCard.vue'
 import EnergyCard from '@/components/EnergyCard.vue'
 import CO2Card from '@/components/CO2Card.vue'
@@ -221,6 +259,8 @@ export default {
     Card,
     DataTable,
     Column,
+    Button,
+    InputText,
     DataCard,
     EnergyCard,
     CO2Card,
@@ -253,6 +293,13 @@ export default {
     const isConnected = ref(false)
     const emissionFactor = ref(EMISSION_FACTORS.THAILAND) // kg CO2 per kWh (Thailand grid factor)
     const espId = ref(route.params.espid || 'ESP001') // Get from route parameter or default
+    
+    // Device management
+    const currentDevice = ref({ name: '', espid: '' })
+    const isEditingDeviceName = ref(false)
+    const editingDeviceName = ref('')
+    const isSavingDeviceName = ref(false)
+    const deviceNameInput = ref(null)
     
     // Computed properties
     const totalPower = computed(() => {
@@ -435,6 +482,85 @@ export default {
     
     // Daily energy calculation is now handled by the backend via SQL queries
     // This improves performance for large datasets by offloading computation to the database
+    
+    // Device management methods
+    const fetchDeviceInfo = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        console.log('Fetching device info for ESP ID:', espId.value)
+        console.log('Using token:', token ? 'Token present' : 'No token found')
+        
+        if (!token) {
+          console.error('No authentication token found')
+          currentDevice.value = { name: 'Unknown Device', espid: espId.value }
+          return
+        }
+        
+        const response = await axios.get(`http://localhost:3000/api/devices/${espId.value}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        console.log('Device info response:', response.data)
+        
+        if (response.data) {
+          currentDevice.value = response.data
+          console.log('Device info updated:', currentDevice.value)
+        }
+      } catch (error) {
+        console.error('Error fetching device info:', error)
+        console.error('Error details:', error.response?.data || error.message)
+        // Set default values if fetch fails
+        currentDevice.value = { name: 'Unknown Device', espid: espId.value }
+      }
+    }
+    
+    const startEditingDeviceName = () => {
+      editingDeviceName.value = currentDevice.value.name || ''
+      isEditingDeviceName.value = true
+      nextTick(() => {
+        if (deviceNameInput.value) {
+          deviceNameInput.value.$el.focus()
+        }
+      })
+    }
+    
+    const cancelEditingDeviceName = () => {
+      isEditingDeviceName.value = false
+      editingDeviceName.value = ''
+    }
+    
+    const saveDeviceName = async () => {
+      if (!editingDeviceName.value.trim()) {
+        return
+      }
+      
+      isSavingDeviceName.value = true
+      
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.put(`http://localhost:3000/api/devices/${espId.value}`, {
+          name: editingDeviceName.value.trim()
+        }, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.data.success) {
+          currentDevice.value.name = editingDeviceName.value.trim()
+          isEditingDeviceName.value = false
+          editingDeviceName.value = ''
+        }
+      } catch (error) {
+        console.error('Error saving device name:', error)
+        // You could add a toast notification here
+      } finally {
+        isSavingDeviceName.value = false
+      }
+    }
     
     // Fetch historical data from backend
     const fetchHistoricalData = async () => {
@@ -755,6 +881,7 @@ export default {
     // Lifecycle hooks
     onMounted(async () => {
       connectMQTT()
+      fetchDeviceInfo()
       fetchHistoricalData()
       fetchTodayEnergyData()
       await fetchTodayPowerData()
@@ -792,7 +919,17 @@ export default {
       formatTimestamp,
       formatCO2,
       calculateCO2Emissions,
-      EMISSION_FACTORS
+      EMISSION_FACTORS,
+      // Device management
+      espId,
+      currentDevice,
+      isEditingDeviceName,
+      editingDeviceName,
+      isSavingDeviceName,
+      deviceNameInput,
+      startEditingDeviceName,
+      cancelEditingDeviceName,
+      saveDeviceName
     }
   }
 }
@@ -807,12 +944,81 @@ export default {
 
 .dashboard-header {
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .dashboard-header h1 {
   color: #2c3e50;
   font-size: 2.5rem;
   font-weight: 600;
+  margin: 0;
+}
+
+.device-info-section {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.device-name-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-name-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.device-id {
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-family: monospace;
+}
+
+.device-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-name-input {
+  min-width: 200px;
+}
+
+.edit-btn, .save-btn, .cancel-btn {
+  padding: 4px 8px !important;
+  min-width: auto !important;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .device-info-section {
+    width: 100%;
+  }
+  
+  .device-name-input {
+    min-width: 150px;
+  }
 }
 
 .connection-status {

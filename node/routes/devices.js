@@ -48,13 +48,102 @@ const createDeviceRoutes = (deviceService, sensorService) => {
     },
 
     // Get device by ID
-    getDeviceById: (req, res) => {
-      res.status(501).json({ error: 'Device management not implemented - data stored in database' });
+    getDeviceById: async (req, res) => {
+      try {
+        // Get token from header
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        
+        if (!token) {
+          return res.status(401).json({ error: 'No token, authorization denied' });
+        }
+
+        // Verify token
+        const jwt = require('jsonwebtoken');
+        const { JWT_SECRET } = require('../middleware/auth');
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        const userEmail = decoded.email;
+        const espId = req.params.id;
+        
+        // Check if device service is available
+        if (!deviceService) {
+          return res.status(503).json({ error: 'Device service not available. Please check database connection.' });
+        }
+        
+        // Get device by ESP ID
+        const device = await deviceService.getDevice(espId);
+        
+        if (!device) {
+          return res.status(404).json({ error: 'Device not found' });
+        }
+        
+        // Ensure user can only access their own devices
+        if (device.username !== userEmail) {
+          return res.status(403).json({ error: 'Access denied: You can only view your own devices' });
+        }
+        
+        res.json(device);
+      } catch (error) {
+        console.error('Error retrieving device:', error.message);
+        if (error.name === 'JsonWebTokenError') {
+          return res.status(401).json({ error: 'Invalid token' });
+        }
+        res.status(500).json({ error: 'Failed to retrieve device' });
+      }
     },
 
     // Update device
-    updateDevice: (req, res) => {
-      res.status(501).json({ error: 'Device management not implemented - data stored in database' });
+    updateDevice: async (req, res) => {
+      try {
+        // Get token from header
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        
+        if (!token) {
+          return res.status(401).json({ error: 'No token, authorization denied' });
+        }
+
+        // Verify token
+        const jwt = require('jsonwebtoken');
+        const { JWT_SECRET } = require('../middleware/auth');
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        const userEmail = decoded.email;
+        const espId = req.params.id;
+        const { name } = req.body;
+        
+        // Validate input
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+          return res.status(400).json({ error: 'Device name is required and must be a non-empty string' });
+        }
+        
+        // Check if device service is available
+        if (!deviceService) {
+          return res.status(503).json({ error: 'Device service not available. Please check database connection.' });
+        }
+        
+        // First, verify the device exists and belongs to the user
+        const existingDevice = await deviceService.getDevice(espId);
+        
+        if (!existingDevice) {
+          return res.status(404).json({ error: 'Device not found' });
+        }
+        
+        // Ensure user can only update their own devices
+        if (existingDevice.username !== userEmail) {
+          return res.status(403).json({ error: 'Access denied: You can only update your own devices' });
+        }
+        
+        // Update device name
+        const result = await deviceService.updateDeviceName(espId, name.trim());
+        
+        res.json(result);
+      } catch (error) {
+        console.error('Error updating device:', error.message);
+        if (error.name === 'JsonWebTokenError') {
+          return res.status(401).json({ error: 'Invalid token' });
+        }
+        res.status(500).json({ error: 'Failed to update device' });
+      }
     },
 
     // Get all sensor data
