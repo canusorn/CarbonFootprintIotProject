@@ -294,6 +294,22 @@ app.get('/api/daily-energy/:espId', auth, async (req, res) => {
   res.status(503).json({ error: 'Daily energy service not available' });
 });
 
+// Get today's energy data by ESP ID
+app.get('/api/today-energy/:espId', auth, async (req, res) => {
+  if (deviceRoutes && deviceRoutes.getTodayEnergyData) {
+    return deviceRoutes.getTodayEnergyData(req, res);
+  }
+  res.status(503).json({ error: 'Today energy service not available' });
+});
+
+// Get today's power data by ESP ID
+app.get('/api/today-power/:espId', auth, async (req, res) => {
+  if (deviceRoutes && deviceRoutes.getTodayPowerData) {
+    return deviceRoutes.getTodayPowerData(req, res);
+  }
+  res.status(503).json({ error: 'Today power service not available' });
+});
+
 // Initialize database and start servers
 // Function to initialize services
 const initializeServices = async () => {

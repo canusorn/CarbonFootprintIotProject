@@ -106,6 +106,50 @@ const createDeviceRoutes = (deviceService, sensorService) => {
         console.error('Error retrieving daily energy data:', error.message);
         res.status(500).json({ error: 'Failed to retrieve daily energy data' });
       }
+    },
+
+    // Get today's energy data
+    getTodayEnergyData: async (req, res) => {
+      try {
+        const { espId } = req.params;
+        
+        if (!espId) {
+          return res.status(400).json({ error: 'ESP ID is required' });
+        }
+        
+        // Check if sensor service is available
+        if (!sensorService) {
+          return res.status(503).json({ error: 'Sensor service not available. Please check database connection.' });
+        }
+        
+        const data = await sensorService.getTodayEnergyData(espId);
+        res.json(data);
+      } catch (error) {
+        console.error('Error retrieving today energy data:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve today energy data' });
+      }
+    },
+
+    // Get today's power data for line chart
+    getTodayPowerData: async (req, res) => {
+      try {
+        const { espId } = req.params;
+        
+        if (!espId) {
+          return res.status(400).json({ error: 'ESP ID is required' });
+        }
+        
+        // Check if sensor service is available
+        if (!sensorService) {
+          return res.status(503).json({ error: 'Sensor service not available. Please check database connection.' });
+        }
+        
+        const data = await sensorService.getTodayPowerData(espId);
+        res.json(data);
+      } catch (error) {
+        console.error('Error retrieving today power data:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve today power data' });
+      }
     }
   };
 };

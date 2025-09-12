@@ -4,7 +4,7 @@
 
     <!-- Chart Section -->
     <div class="chart-section">
-      <h4>Daily Energy Consumption & CO2 Emissions</h4>
+      <h4>Daily Energy Consumption & CO2 Emissions Last 30 Days</h4>
       <!-- Summary Cards -->
       <div class="summary-row">
         <div class="summary-item">

@@ -292,6 +292,139 @@ class SensorService {
     }
   }
 
+  async getTodayEnergyData(espId) {
+    const startTime = Date.now();
+    
+    if (!this.connection) {
+      throw new Error('Database connection not initialized');
+    }
+
+    const tableName = `${espId}`;
+    
+    try {
+      console.log(`🔄 Fetching today's energy data for ESP: ${espId}`);
+      
+      // Get first and last Ett values of today to calculate today's energy consumption
+      const query = `
+        SELECT 
+          MIN(Ett) as start_energy,
+          MAX(Ett) as end_energy,
+          COUNT(*) as record_count,
+          MIN(time) as start_time,
+          MAX(time) as end_time
+        FROM \`${tableName}\`
+        WHERE DATE(time) = CURDATE()
+      `;
+
+      const [rows] = await this.connection.execute(query);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Today's energy data fetched for ESP ${espId} in ${duration}ms`);
+      
+      if (rows.length === 0 || rows[0].record_count === 0) {
+        return {
+          todayEnergy: 0,
+          startEnergy: 0,
+          endEnergy: 0,
+          recordCount: 0,
+          startTime: null,
+          endTime: null
+        };
+      }
+      
+      const result = {
+        todayEnergy: Math.max(0, (parseFloat(rows[0].end_energy) || 0) - (parseFloat(rows[0].start_energy) || 0)),
+        startEnergy: parseFloat(rows[0].start_energy) || 0,
+        endEnergy: parseFloat(rows[0].end_energy) || 0,
+        recordCount: parseInt(rows[0].record_count) || 0,
+        startTime: rows[0].start_time,
+        endTime: rows[0].end_time
+      };
+      
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        console.log(`⚠️  Table '${tableName}' does not exist for ESP ${espId} - returning empty data`);
+        return {
+          todayEnergy: 0,
+          startEnergy: 0,
+          endEnergy: 0,
+          recordCount: 0,
+          startTime: null,
+          endTime: null
+        };
+      }
+      
+      console.error(`❌ Failed to fetch today's energy data for ESP ${espId} after ${duration}ms:`);
+      console.error(`   Database Error: ${error.message}`);
+      console.error(`   Error Code: ${error.code || 'UNKNOWN'}`);
+      console.error(`   SQL State: ${error.sqlState || 'N/A'}`);
+      
+      throw new Error(`Today's energy data fetch failed for ESP ${espId}: ${error.message}`);
+    }
+  }
+
+  async getTodayPowerData(espId) {
+    const startTime = Date.now();
+    
+    if (!this.connection) {
+      throw new Error('Database connection not initialized');
+    }
+
+    const tableName = `${espId}`;
+    
+    try {
+      console.log(`🔄 Fetching today's power data for ESP: ${espId}`);
+      
+      // Get all power data for today for line chart
+      const query = `
+        SELECT 
+          time,
+          Pa,
+          Pb,
+          Pc,
+          (Pa + Pb + Pc) as total_power
+        FROM \`${tableName}\`
+        WHERE DATE(time) = CURDATE()
+        ORDER BY time ASC
+      `;
+
+      const [rows] = await this.connection.execute(query);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Today's power data fetched for ESP ${espId} in ${duration}ms (${rows.length} records)`);
+      
+      // Format the results for chart display
+      const result = rows.map(row => ({
+        time: row.time,
+        Pa: parseFloat(row.Pa) || 0,
+        Pb: parseFloat(row.Pb) || 0,
+        Pc: parseFloat(row.Pc) || 0,
+        totalPower: parseFloat(row.total_power) || 0
+      }));
+      
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        console.log(`⚠️  Table '${tableName}' does not exist for ESP ${espId} - returning empty data`);
+        return [];
+      }
+      
+      console.error(`❌ Failed to fetch today's power data for ESP ${espId} after ${duration}ms:`);
+      console.error(`   Database Error: ${error.message}`);
+      console.error(`   Error Code: ${error.code || 'UNKNOWN'}`);
+      console.error(`   SQL State: ${error.sqlState || 'N/A'}`);
+      
+      throw new Error(`Today's power data fetch failed for ESP ${espId}: ${error.message}`);
+    }
+  }
+
   async close() {
     // Don't close the shared pool, just reset the reference
     // The pool is managed by the database configuration

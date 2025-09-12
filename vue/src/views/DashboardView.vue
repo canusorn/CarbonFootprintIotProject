@@ -15,67 +15,148 @@
             </div>
           </div>
 
-          <!-- Real-time Data Cards -->
-          <div class="data-cards-grid">
-            <!-- Voltage Card -->
-            <DataCard
-              title="Voltage (V)"
-              :phase-a="sensorData.Va"
-              :phase-b="sensorData.Vb"
-              :phase-c="sensorData.Vc"
-              unit="V"
-              card-class="voltage-card"
-              :precision="1"
-            />
-
-            <!-- Current Card -->
-            <DataCard
-              title="Current (A)"
-              :phase-a="sensorData.Ia"
-              :phase-b="sensorData.Ib"
-              :phase-c="sensorData.Ic"
-              unit="A"
-              card-class="current-card"
-              :precision="2"
-            />
-
-            <!-- Power Card -->
-            <DataCard
-              title="Power (W)"
-              :phase-a="sensorData.Pa"
-              :phase-b="sensorData.Pb"
-              :phase-c="sensorData.Pc"
-              unit="W"
-              card-class="power-card"
-              :precision="1"
-              :show-total="true"
-            />
-
-            <!-- Power Factor Card -->
-            <DataCard
-              title="Power Factor"
-              :phase-a="sensorData.PFa"
-              :phase-b="sensorData.PFb"
-              :phase-c="sensorData.PFc"
-              unit=""
-              card-class="pf-card"
-              :precision="2"
-            />
+          <!-- Today Energy Card -->
+          <div class="today-energy-card">
+            <div class="energy-card-header">
+              <i class="pi pi-bolt" style="color: #f39c12;"></i>
+              <h3>Today's Energy</h3>
+            </div>
+            <div class="energy-card-content">
+              <div class="energy-value">
+                <span class="value">{{ todayEnergyData.todayEnergy.toFixed(2) }}</span>
+                <span class="unit">kWh</span>
+              </div>
+              <div class="energy-details">
+                <div class="detail-item">
+                  <span class="label">Start:</span>
+                  <span class="value">{{ todayEnergyData.startEnergy.toFixed(2) }} kWh</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Current:</span>
+                  <span class="value">{{ todayEnergyData.endEnergy.toFixed(2) }} kWh</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Records:</span>
+                  <span class="value">{{ todayEnergyData.recordCount }}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Energy and CO2 Section -->
-          <div class="energy-co2-section">
-            <EnergyCard
-              :energy-import="sensorData.Eim"
-              :energy-export="sensorData.Eex"
-              :total-energy="sensorData.Ett"
-            />
+          <!-- Real-time Power Display -->
+          <div class="realtime-power-section">
+            <div class="power-section-header">
+              <i class="pi pi-flash" style="color: #e74c3c;"></i>
+              <h3>Real-time Power (3-Phase)</h3>
+            </div>
+            <div class="power-phases-grid">
+              <div class="phase-card phase-a">
+                <div class="phase-header">
+                  <span class="phase-label">Phase A</span>
+                  <i class="pi pi-circle-fill phase-indicator"></i>
+                </div>
+                <div class="phase-value">
+                  <span class="value">{{ sensorData.Pa.toFixed(2) }}</span>
+                  <span class="unit">W</span>
+                </div>
+                <div class="phase-details">
+                  <div class="detail">
+                    <span class="label">Voltage:</span>
+                    <span class="value">{{ sensorData.Va.toFixed(1) }}V</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">Current:</span>
+                    <span class="value">{{ sensorData.Ia.toFixed(2) }}A</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">PF:</span>
+                    <span class="value">{{ sensorData.PFa.toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="phase-card phase-b">
+                <div class="phase-header">
+                  <span class="phase-label">Phase B</span>
+                  <i class="pi pi-circle-fill phase-indicator"></i>
+                </div>
+                <div class="phase-value">
+                  <span class="value">{{ sensorData.Pb.toFixed(2) }}</span>
+                  <span class="unit">W</span>
+                </div>
+                <div class="phase-details">
+                  <div class="detail">
+                    <span class="label">Voltage:</span>
+                    <span class="value">{{ sensorData.Vb.toFixed(1) }}V</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">Current:</span>
+                    <span class="value">{{ sensorData.Ib.toFixed(2) }}A</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">PF:</span>
+                    <span class="value">{{ sensorData.PFb.toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="phase-card phase-c">
+                <div class="phase-header">
+                  <span class="phase-label">Phase C</span>
+                  <i class="pi pi-circle-fill phase-indicator"></i>
+                </div>
+                <div class="phase-value">
+                  <span class="value">{{ sensorData.Pc.toFixed(2) }}</span>
+                  <span class="unit">W</span>
+                </div>
+                <div class="phase-details">
+                  <div class="detail">
+                    <span class="label">Voltage:</span>
+                    <span class="value">{{ sensorData.Vc.toFixed(1) }}V</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">Current:</span>
+                    <span class="value">{{ sensorData.Ic.toFixed(2) }}A</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">PF:</span>
+                    <span class="value">{{ sensorData.PFc.toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="phase-card total-power">
+                <div class="phase-header">
+                  <span class="phase-label">Total Power</span>
+                  <i class="pi pi-bolt phase-indicator"></i>
+                </div>
+                <div class="phase-value total">
+                  <span class="value">{{ totalPower.toFixed(2) }}</span>
+                  <span class="unit">W</span>
+                </div>
+                <div class="phase-details">
+                  <div class="detail">
+                    <span class="label">Energy Total:</span>
+                    <span class="value">{{ sensorData.Ett.toFixed(2) }} kWh</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">CO2 Impact:</span>
+                    <span class="value">{{ totalCO2.toFixed(2) }} kg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <CO2Card
-              :total-co2="totalCO2"
-              :daily-co2="dailyCO2"
-              :emission-factor="emissionFactor"
-            />
+          <!-- Today's Power Line Chart -->
+          <div class="power-chart-section">
+            <div class="chart-header">
+              <i class="pi pi-chart-line" style="color: #3498db;"></i>
+              <h3>Today's Power Consumption</h3>
+            </div>
+            <div class="power-chart-container">
+              <canvas ref="powerChartCanvas" id="powerChart"></canvas>
+            </div>
           </div>
 
           <!-- Daily Energy Chart -->
@@ -96,10 +177,11 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import mqtt from 'mqtt'
 import axios from 'axios'
+import { Chart, registerables } from 'chart.js'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
@@ -109,6 +191,9 @@ import DataCard from '@/components/DataCard.vue'
 import EnergyCard from '@/components/EnergyCard.vue'
 import CO2Card from '@/components/CO2Card.vue'
 import DailyEnergyChart from '@/components/DailyEnergyChart.vue'
+
+// Register Chart.js components
+Chart.register(...registerables)
 
 export default {
   name: 'DashboardView',
@@ -135,6 +220,17 @@ export default {
     
     const historicalData = ref([])
     const dailyEnergyData = ref([])
+    const todayEnergyData = ref({
+      todayEnergy: 0,
+      startEnergy: 0,
+      endEnergy: 0,
+      recordCount: 0,
+      startTime: null,
+      endTime: null
+    })
+    const todayPowerData = ref([])
+    const powerChartCanvas = ref(null)
+    const powerChart = ref(null)
     const mqttClient = ref(null)
     const isConnected = ref(false)
     const emissionFactor = ref(0.5) // kg CO2 per kWh (example factor)
@@ -316,25 +412,224 @@ export default {
       }
     }
     
+    // Fetch today's energy data from backend
+    const fetchTodayEnergyData = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`http://localhost:3000/api/today-energy/${espId.value}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.data) {
+          todayEnergyData.value = {
+            todayEnergy: parseFloat(response.data.todayEnergy || 0),
+            startEnergy: parseFloat(response.data.startEnergy || 0),
+            endEnergy: parseFloat(response.data.endEnergy || 0),
+            recordCount: parseInt(response.data.recordCount || 0),
+            startTime: response.data.startTime,
+            endTime: response.data.endTime
+          }
+          console.log('Fetched today\'s energy data:', todayEnergyData.value)
+        }
+      } catch (error) {
+        console.error('Error fetching today\'s energy data:', error)
+        // Keep default values on error
+      }
+    }
+    
+    // Fetch today's power data from backend
+    const fetchTodayPowerData = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`http://localhost:3000/api/today-power/${espId.value}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.data && Array.isArray(response.data)) {
+          todayPowerData.value = response.data.map(item => ({
+            time: item.time,
+            Pa: parseFloat(item.Pa || 0),
+            Pb: parseFloat(item.Pb || 0),
+            Pc: parseFloat(item.Pc || 0),
+            totalPower: parseFloat(item.totalPower || 0)
+          }))
+          console.log('Fetched today\'s power data:', todayPowerData.value.length, 'records')
+        }
+      } catch (error) {
+        console.error('Error fetching today\'s power data:', error)
+        todayPowerData.value = []
+      }
+    }
+    
+    // Create power line chart
+    const createPowerChart = async () => {
+      await nextTick()
+      
+      if (!powerChartCanvas.value) {
+        console.error('Power chart canvas not found')
+        return
+      }
+      
+      // Destroy existing chart if it exists
+      if (powerChart.value) {
+        powerChart.value.destroy()
+      }
+      
+      const ctx = powerChartCanvas.value.getContext('2d')
+      
+      // Prepare chart data from todayPowerData
+      const labels = todayPowerData.value.map(item => {
+        const date = new Date(item.time)
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      })
+      
+      const phaseAData = todayPowerData.value.map(item => item.Pa)
+      const phaseBData = todayPowerData.value.map(item => item.Pb)
+      const phaseCData = todayPowerData.value.map(item => item.Pc)
+      const totalPowerData = todayPowerData.value.map(item => item.totalPower)
+      
+      powerChart.value = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Phase A',
+              data: phaseAData,
+              borderColor: '#e74c3c',
+              backgroundColor: 'rgba(231, 76, 60, 0.1)',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.4
+            },
+            {
+              label: 'Phase B',
+              data: phaseBData,
+              borderColor: '#f39c12',
+              backgroundColor: 'rgba(243, 156, 18, 0.1)',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.4
+            },
+            {
+              label: 'Phase C',
+              data: phaseCData,
+              borderColor: '#27ae60',
+              backgroundColor: 'rgba(39, 174, 96, 0.1)',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.4
+            },
+            {
+              label: 'Total Power',
+              data: totalPowerData,
+              borderColor: '#8e44ad',
+              backgroundColor: 'rgba(142, 68, 173, 0.1)',
+              borderWidth: 3,
+              fill: false,
+              tension: 0.4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Today\'s Power Consumption by Phase',
+              font: {
+                size: 16,
+                weight: 'bold'
+              }
+            },
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          },
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Time'
+              },
+              ticks: {
+                maxTicksLimit: 10
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: 'Power (W)'
+              },
+              beginAtZero: true
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          }
+        }
+      })
+    }
+    
+    // Update power chart with new data
+    const updatePowerChart = () => {
+      if (powerChart.value && todayPowerData.value.length > 0) {
+        const labels = todayPowerData.value.map(item => {
+          const date = new Date(item.time)
+          return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        })
+        
+        powerChart.value.data.labels = labels
+        powerChart.value.data.datasets[0].data = todayPowerData.value.map(item => item.Pa)
+        powerChart.value.data.datasets[1].data = todayPowerData.value.map(item => item.Pb)
+        powerChart.value.data.datasets[2].data = todayPowerData.value.map(item => item.Pc)
+        powerChart.value.data.datasets[3].data = todayPowerData.value.map(item => item.totalPower)
+        
+        powerChart.value.update()
+      }
+    }
+    
     // Format timestamp for display
     const formatTimestamp = (timestamp) => {
       return new Date(timestamp).toLocaleString()
     }
     
     // Lifecycle hooks
-    onMounted(() => {
+    onMounted(async () => {
       connectMQTT()
       fetchHistoricalData()
+      fetchTodayEnergyData()
+      await fetchTodayPowerData()
+      // Create power chart after data is loaded
+      setTimeout(() => {
+        createPowerChart()
+      }, 500)
     })
     
     onUnmounted(() => {
       disconnectMQTT()
+      // Cleanup chart
+      if (powerChart.value) {
+        powerChart.value.destroy()
+      }
     })
     
     return {
       sensorData,
       historicalData,
       dailyEnergyData,
+      todayEnergyData,
+      todayPowerData,
+      powerChartCanvas,
       isConnected,
       emissionFactor,
       totalPower,
@@ -484,6 +779,314 @@ export default {
 .energy-label, .co2-label {
   font-weight: 500;
   color: #666;
+}
+
+/* Today Energy Card Styles */
+.today-energy-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.today-energy-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+}
+
+.energy-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.energy-card-header i {
+  font-size: 24px;
+}
+
+.energy-card-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+}
+
+.energy-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.energy-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.energy-value .value {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.energy-value .unit {
+  font-size: 18px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.energy-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-width: 180px;
+}
+
+.detail-item .label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.detail-item .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .energy-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .energy-details {
+    width: 100%;
+  }
+}
+
+/* Real-time Power Display Styles */
+.realtime-power-section {
+  margin-bottom: 24px;
+}
+
+.power-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px 0;
+}
+
+.power-section-header i {
+  font-size: 24px;
+}
+
+.power-section-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.power-phases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.phase-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #3498db;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.phase-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.phase-card.phase-a {
+  border-left-color: #e74c3c;
+}
+
+.phase-card.phase-b {
+  border-left-color: #f39c12;
+}
+
+.phase-card.phase-c {
+  border-left-color: #27ae60;
+}
+
+.phase-card.total-power {
+  border-left-color: #8e44ad;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.phase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.phase-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.phase-indicator {
+  font-size: 12px;
+}
+
+.phase-card.phase-a .phase-indicator {
+  color: #e74c3c;
+}
+
+.phase-card.phase-b .phase-indicator {
+  color: #f39c12;
+}
+
+.phase-card.phase-c .phase-indicator {
+  color: #27ae60;
+}
+
+.phase-card.total-power .phase-indicator {
+  color: #8e44ad;
+}
+
+.phase-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.phase-value .value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.phase-value.total .value {
+  font-size: 32px;
+  color: #8e44ad;
+}
+
+.phase-value .unit {
+  font-size: 16px;
+  font-weight: 500;
+  color: #7f8c8d;
+}
+
+.phase-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail .label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #7f8c8d;
+}
+
+.detail .value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+@media (max-width: 768px) {
+  .power-phases-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .phase-card {
+    padding: 16px;
+  }
+  
+  .phase-value .value {
+    font-size: 24px;
+  }
+  
+  .phase-value.total .value {
+    font-size: 28px;
+  }
+}
+
+/* Power Chart Styles */
+.power-chart-section {
+  margin-bottom: 24px;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #3498db;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.chart-header i {
+  font-size: 24px;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.power-chart-container {
+  position: relative;
+  height: 400px;
+  width: 100%;
+}
+
+.power-chart-container canvas {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@media (max-width: 768px) {
+  .power-chart-container {
+    height: 300px;
+  }
+  
+  .power-chart-section {
+    padding: 16px;
+  }
 }
 
 .energy-value, .co2-value {
