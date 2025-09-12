@@ -1,10 +1,10 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <div class="header-left">
+      <!-- <div class="header-left">
         <h1>Carbon Footprint Dashboard</h1>
-      </div>
-      <div class="header-center">
+      </div> -->
+      <div class="header-left">
         <div class="device-info-section">
           <div class="device-name-container">
             <i class="pi pi-microchip" style="color: #3498db; margin-right: 8px;"></i>
