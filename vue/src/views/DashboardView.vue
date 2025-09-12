@@ -326,9 +326,9 @@ export default {
         maintainAspectRatio: false,
         plugins: {
           title: {
-        display: true,
-        text: 'Daily Energy Consumption & CO2 Emissions'
-      },
+            display: true,
+            text: 'Daily Energy Consumption & CO2 Emissions (Last 30 Days)'
+          },
           legend: {
             display: true,
             position: 'top'
@@ -457,6 +457,11 @@ export default {
       }
       
       try {
+        // Get date range for last 30 days
+        const today = new Date()
+        const thirtyDaysAgo = new Date(today)
+        thirtyDaysAgo.setDate(today.getDate() - 30)
+        
         // Group data by date and validate timestamps
         const dailyData = {}
         
@@ -475,6 +480,11 @@ export default {
               return
             }
             
+            // Filter for last 30 days only
+            if (date < thirtyDaysAgo || date > today) {
+              return
+            }
+            
             const dateKey = date.toISOString().split('T')[0]
             
             if (!dailyData[dateKey]) {
@@ -486,22 +496,19 @@ export default {
           }
         })
         
-        // Get all unique dates from the data and sort them
-        const allDates = Object.keys(dailyData).sort()
-        
-        // Calculate daily energy for each date with data
+        // Generate all dates for last 30 days (including days with no data)
         const result = []
-        
-        allDates.forEach(dateKey => {
+        for (let i = 29; i >= 0; i--) {
+          const currentDate = new Date(today)
+          currentDate.setDate(today.getDate() - i)
+          const dateKey = currentDate.toISOString().split('T')[0]
+          
           let dailyEnergy = 0
           let co2Emissions = 0
-          
-          console.log(`\n=== Processing date: ${dateKey} ===`)
           
           if (dailyData[dateKey] && dailyData[dateKey].length > 0) {
             try {
               const dayRecords = dailyData[dateKey]
-              console.log(`Records for ${dateKey}:`, dayRecords.length)
               
               // Sort records by time to get first and last
               dayRecords.sort((a, b) => {
@@ -516,39 +523,23 @@ export default {
               const firstRecord = dayRecords[0]
               const lastRecord = dayRecords[dayRecords.length - 1]
               
-              console.log(`First record Ett: ${firstRecord.Ett}, time: ${firstRecord.time}`)
-              console.log(`Last record Ett: ${lastRecord.Ett}, time: ${lastRecord.time}`)
-              
               // Calculate daily energy consumption (last - first Ett value)
-              const firstEtt = parseFloat(firstRecord.Ett || 0)
-              const lastEtt = parseFloat(lastRecord.Ett || 0)
-              dailyEnergy = lastEtt - firstEtt
-              
-              console.log(`Energy calculation: ${lastEtt} - ${firstEtt} = ${dailyEnergy}`)
-              
+              dailyEnergy = parseFloat(lastRecord.Ett || 0) - parseFloat(firstRecord.Ett || 0)
               dailyEnergy = Math.max(0, dailyEnergy) // Ensure non-negative
-              
-              console.log(`Final daily energy after max(0, x): ${dailyEnergy}`)
               
               // Calculate CO2 emissions
               co2Emissions = dailyEnergy * emissionFactor.value
-              
-              console.log(`CO2 emissions: ${dailyEnergy} * ${emissionFactor.value} = ${co2Emissions}`)
             } catch (dayError) {
               console.warn('Error calculating daily energy for date:', dateKey, dayError)
             }
-          } else {
-            console.log(`No data found for ${dateKey}`)
           }
-          
-          console.log(`Final result for ${dateKey}: energy=${dailyEnergy}, co2=${Math.max(0, co2Emissions)}`)
           
           result.push({
             date: dateKey,
             energy: dailyEnergy,
             co2: Math.max(0, co2Emissions)
           })
-        })
+        }
         
         return result
       } catch (error) {
