@@ -587,7 +587,7 @@ export default {
               backgroundColor: 'rgba(231, 76, 60, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0.4
+              tension: 0
             },
             {
               label: 'Phase B',
@@ -596,7 +596,7 @@ export default {
               backgroundColor: 'rgba(243, 156, 18, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0.4
+              tension: 0
             },
             {
               label: 'Phase C',
@@ -605,7 +605,7 @@ export default {
               backgroundColor: 'rgba(39, 174, 96, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0.4
+              tension: 0
             },
             {
               label: 'Total Power',
@@ -614,7 +614,7 @@ export default {
               backgroundColor: 'rgba(142, 68, 173, 0.1)',
               borderWidth: 3,
               fill: false,
-              tension: 0.4
+              tension: 0
             }
           ]
         },
@@ -622,6 +622,16 @@ export default {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: 60*60*1000, // 1 Hours
+          animation: {
+            duration: 0 // Disable all animations
+          },
+          transitions: {
+            active: {
+              animation: {
+                duration: 0 // Disable active transitions
+              }
+            }
+          },
           plugins: {
             title: {
               display: true,
