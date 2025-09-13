@@ -59,7 +59,7 @@
       </div>
     </div>
     
-    <TabView>
+    <TabView :activeIndex="0">
       <TabPanel header="Overview">
         <div class="overview-content">
           <!-- Connection Status -->
@@ -2655,18 +2655,21 @@ export default {
 
 .date-controls {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 24px;
+  align-items: flex-end;
+  flex-wrap: wrap;
 }
 
 .preset-dropdown {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
+  padding: 12px;
   background: #f8f9fa;
-  border-radius: 12px;
-  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  flex: 0 0 auto;
 }
 
 .preset-dropdown label {
@@ -2703,10 +2706,11 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-  border-radius: 12px;
-  border-left: 4px solid #2196f3;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  flex: 1 1 auto;
 }
 
 .date-picker-group {
@@ -2734,11 +2738,11 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
-  padding-top: 20px;
-  border-top: 1px solid #e9ecef;
+  align-items: flex-end;
+  flex: 0 0 auto;
 }
 
 .action-buttons .p-button {
