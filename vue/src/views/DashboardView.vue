@@ -460,11 +460,7 @@ export default {
                 totalPower: parseFloat(data.Pa || 0) + parseFloat(data.Pb || 0) + parseFloat(data.Pc || 0)
               })
               
-              // Limit data points to prevent memory issues (keep last 100 points)
-              const maxDataPoints = 100
-              if (todayPowerData.value.length > maxDataPoints) {
-                todayPowerData.value.splice(0, todayPowerData.value.length - maxDataPoints)
-              }
+              // Keep all data points - no data limiting to preserve historical data
               
               // Update power chart with new real-time data
               updatePowerChartRealtime(data)
