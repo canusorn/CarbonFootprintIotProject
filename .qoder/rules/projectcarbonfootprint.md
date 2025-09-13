@@ -1,8 +1,7 @@
 ---
-trigger: manual
-alwaysApply: false
+trigger: always_on
+alwaysApply: true
 ---
-
 # Carbon Footprint IoT Project Rules
 
 ## Project Architecture
@@ -93,9 +92,40 @@ This project follows a microservice architecture with separate frontend and back
    - Return 401 Unauthorized for invalid/missing tokens
    - Frontend route guards for authenticated pages
 
+### Database Integration
+1. **MySQL Database**: Use MySQL as the primary database system
+   - Database connection configured via environment variables
+   - Use mysql2 package for Node.js MySQL integration
+   - Database initialization and schema creation on server startup
+   - Graceful fallback mode when MySQL is not available
+
+2. **Database Configuration**:
+   - Host: configurable via DB_HOST (default: localhost)
+   - Port: configurable via DB_PORT (default: 3306)
+   - Database: configurable via DB_NAME (default: carbon_footprint_db)
+   - User: configurable via DB_USER (default: root)
+   - Password: configurable via DB_PASSWORD
+
+3. **Database Schema**:
+   - **Main Database**: Uses DB_NAME from .env file for:
+     - Users table for authentication (id, email, password_hash, created_at, updated_at)
+     - Device table for ESP device information (id, espid, name, username, date)
+     - Additional tables for carbon footprint metrics and application data
+   - **Sensor Data**: Uses time series storage with ESP ID-based table naming:
+     - Individual tables per ESP device (e.g., `sensor_data_ESP001`)
+     - Optimized for high-frequency sensor data ingestion
+     - Time-based indexing for efficient querying
+   - Proper indexing for performance optimization
+
+4. **Environment Variables**:
+   - Use .env file for database configuration
+   - Provide .env.example template for setup guidance
+   - Never commit actual credentials to version control
+
 ### Technology Stack Compliance
-- **Backend**: Node.js + Express + Aedes + JWT + bcryptjs
+- **Backend**: Node.js + Express + Aedes + JWT + bcryptjs + MySQL
 - **Frontend**: Vue.js 3 + PrimeVue
+- **Database**: MySQL with mysql2 driver
 - **Communication**: REST API + MQTT
 - **Authentication**: JWT tokens (no expiration) + hashed passwords
 - **Package Management**: npm for both frontend and backend
