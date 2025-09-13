@@ -198,6 +198,37 @@ class SensorService {
     return await this.getLatestData(espId, limit);
   }
 
+  async getHistoricalDataByDateRange(espId, startDate, endDate, limit = 50000) {
+    if (!this.connection) {
+      throw new Error('Database connection not initialized');
+    }
+
+    const tableName = `${espId}`;
+    
+    try {
+      console.log(`🔄 Fetching historical data for ESP: ${espId} from ${startDate} to ${endDate}`);
+      
+      const selectQuery = `
+        SELECT * FROM \`${tableName}\`
+        WHERE time >= ? AND time <= ?
+        ORDER BY time ASC
+        LIMIT ?
+      `;
+
+      const [rows] = await this.connection.execute(selectQuery, [startDate, endDate, limit]);
+      
+      console.log(`✅ Retrieved ${rows.length} records for ESP: ${espId}`);
+      return rows;
+    } catch (error) {
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        console.log(`⚠️ Table '${tableName}' does not exist, returning empty array`);
+        return [];
+      }
+      console.error(`SensorService: Failed to get historical data from '${tableName}':`, error.message);
+      throw error;
+    }
+  }
+
   async getDailyEnergyData(espId, days = 30) {
     const startTime = Date.now();
     

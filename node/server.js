@@ -285,6 +285,28 @@ app.get('/api/sensor-data/:espId', auth, async (req, res) => {
   }
 });
 
+// Get historical sensor data by date range
+app.get('/api/sensor-data/:espId/history', auth, async (req, res) => {
+  try {
+    const { espId } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    if (!sensorService) {
+      return res.status(503).json({ error: 'Sensor service not available' });
+    }
+    
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate query parameters are required' });
+    }
+    
+    const data = await sensorService.getHistoricalDataByDateRange(espId, startDate, endDate);
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching historical sensor data:', error);
+    res.status(500).json({ error: 'Failed to fetch historical sensor data' });
+  }
+});
+
 // Get daily energy data by ESP ID
 app.get('/api/daily-energy/:espId', auth, async (req, res) => {
   if (deviceRoutes && deviceRoutes.getDailyEnergyData) {

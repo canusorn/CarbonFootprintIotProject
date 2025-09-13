@@ -20,6 +20,7 @@
     "mqtt": "^5.14.1",
     "primeicons": "^7.0.0",
     "primevue": "^4.3.9",
+    "uplot": "^1.6.32",
     "vue": "^3.5.18",
     "vue-chartjs": "^5.3.2",
     "vue-router": "^4.5.1"

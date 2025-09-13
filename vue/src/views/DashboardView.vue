@@ -234,7 +234,130 @@
       
       <TabPanel header="History">
         <div class="history-content">
-          <p>History tab will be implemented later.</p>
+          <div class="history-controls">
+            <div class="date-range-section">
+              <h3>Select Date Range</h3>
+              <div class="date-controls">
+                <div class="preset-buttons">
+                  <Button 
+                    label="Today" 
+                    @click="setDatePreset('today')" 
+                    :class="{ 'p-button-outlined': selectedPreset !== 'today' }"
+                    size="small"
+                  />
+                  <Button 
+                    label="Yesterday" 
+                    @click="setDatePreset('yesterday')" 
+                    :class="{ 'p-button-outlined': selectedPreset !== 'yesterday' }"
+                    size="small"
+                  />
+                  <Button 
+                    label="Last 7 Days" 
+                    @click="setDatePreset('last7days')" 
+                    :class="{ 'p-button-outlined': selectedPreset !== 'last7days' }"
+                    size="small"
+                  />
+                  <Button 
+                    label="Last 30 Days" 
+                    @click="setDatePreset('last30days')" 
+                    :class="{ 'p-button-outlined': selectedPreset !== 'last30days' }"
+                    size="small"
+                  />
+                </div>
+                <div class="date-pickers">
+                  <div class="date-picker-group">
+                    <label>Select Date Range:</label>
+                    <DatePicker 
+                      v-model="dateRange" 
+                      selectionMode="range"
+                      dateFormat="yy-mm-dd"
+                      showIcon
+                      :manualInput="false"
+                      placeholder="Select date range"
+                      @date-select="onDateRangeChange"
+                    />
+                  </div>
+                </div>
+                <div class="action-buttons">
+                  <Button 
+                    label="Fetch Data" 
+                    icon="pi pi-search" 
+                    @click="fetchHistoricalData"
+                    :loading="isLoadingHistory"
+                    :disabled="!dateRange || !dateRange[0] || !dateRange[1]"
+                  />
+                  <Button 
+                    label="Download CSV" 
+                    icon="pi pi-download" 
+                    @click="downloadCSV"
+                    :disabled="!historicalData || historicalData.length === 0"
+                    class="p-button-success"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="isLoadingHistory" class="loading-section">
+            <div class="loading-content">
+              <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+              <p>Loading historical data...</p>
+            </div>
+          </div>
+          
+          <div v-else-if="historicalData && historicalData.length > 0" class="history-results">
+            <div class="data-summary">
+              <Card>
+                <template #title>Data Summary</template>
+                <template #content>
+                  <div class="summary-grid">
+                    <div class="summary-item">
+                      <span class="summary-label">Total Records:</span>
+                      <span class="summary-value">{{ historicalData.length }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">Total Energy:</span>
+                      <span class="summary-value">{{ formatEnergy(totalEnergy) }} kWh</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">Total CO2 Emissions:</span>
+                      <span class="summary-value">{{ formatCO2(historicalTotalCO2) }} kg CO2</span>
+                    </div>
+                    <div class="summary-item">
+                      <span class="summary-label">Date Range:</span>
+                      <span class="summary-value">{{ formatDateRange() }}</span>
+                    </div>
+                  </div>
+                </template>
+              </Card>
+            </div>
+            
+            <div class="chart-section">
+              <Card>
+                <template #title>Power Consumption & CO2 Emissions</template>
+                <template #content>
+                  <div ref="uplotContainer" class="uplot-container">
+                    <div v-if="!uplotChart" class="chart-loading">
+                      <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #666;"></i>
+                      <p>Loading chart...</p>
+                    </div>
+                  </div>
+                </template>
+              </Card>
+            </div>
+          </div>
+          
+          <div v-else-if="!isLoadingHistory && historicalDataFetched" class="no-data-section">
+            <Card>
+              <template #content>
+                <div class="no-data-content">
+                  <i class="pi pi-info-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                  <h3>No Data Found</h3>
+                  <p>No sensor data found for the selected date range.</p>
+                </div>
+              </template>
+            </Card>
+          </div>
         </div>
       </TabPanel>
     </TabView>
@@ -255,6 +378,9 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
+import DatePicker from 'primevue/datepicker'
+import uPlot from 'uplot'
+import 'uplot/dist/uPlot.min.css'
 import DataCard from '@/components/DataCard.vue'
 import EnergyCard from '@/components/EnergyCard.vue'
 import CO2Card from '@/components/CO2Card.vue'
@@ -278,6 +404,7 @@ export default {
     Card,
     DataTable,
     Column,
+    DatePicker,
     Button,
     InputText,
     DataCard,
@@ -607,84 +734,7 @@ export default {
       router.push('/')
     }
     
-    // Fetch historical data from backend
-    const fetchHistoricalData = async () => {
-      try {
-        const token = localStorage.getItem('token')
-        
-        // Fetch latest sensor data for dashboard display
-        const sensorResponse = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        console.log('Fetched sensor data:', sensorResponse.data)
-        
-        // Validate sensor response data
-        if (!sensorResponse.data || !Array.isArray(sensorResponse.data)) {
-          console.warn('Invalid sensor response data format:', sensorResponse.data)
-          historicalData.value = []
-        } else {
-          historicalData.value = sensorResponse.data
-          console.log('Fetched historical data:', sensorResponse.data.length, 'records')
-          
-          // Set initial dashboard values from latest historical data
-          if (sensorResponse.data && sensorResponse.data.length > 0) {
-            try {
-              const latestData = sensorResponse.data[sensorResponse.data.length - 1]
-              sensorData.value = {
-                Va: parseFloat(latestData.Va || 0),
-                Vb: parseFloat(latestData.Vb || 0),
-                Vc: parseFloat(latestData.Vc || 0),
-                Ia: parseFloat(latestData.Ia || 0),
-                Ib: parseFloat(latestData.Ib || 0),
-                Ic: parseFloat(latestData.Ic || 0),
-                Pa: parseFloat(latestData.Pa || 0),
-                Pb: parseFloat(latestData.Pb || 0),
-                Pc: parseFloat(latestData.Pc || 0),
-                PFa: parseFloat(latestData.PFa || 0),
-                PFb: parseFloat(latestData.PFb || 0),
-                PFc: parseFloat(latestData.PFc || 0),
-                Eim: parseFloat(latestData.Eim || 0),
-                Eex: parseFloat(latestData.Eex || 0),
-                Ett: parseFloat(latestData.Ett || 0)
-              }
-              console.log('Initial dashboard values set from historical data')
-            } catch (dataError) {
-              console.error('Error setting initial dashboard values:', dataError)
-            }
-          }
-        }
-        
-        // Fetch daily energy data from backend (calculated via SQL)
-        const dailyResponse = await axios.get(`http://localhost:3000/api/daily-energy/${espId.value}?days=30`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        console.log('Fetched daily energy data:', dailyResponse.data)
-        // Validate daily energy response data
-        if (!dailyResponse.data || !Array.isArray(dailyResponse.data)) {
-          console.warn('Invalid daily energy response data format:', dailyResponse.data)
-          dailyEnergyData.value = []
-        } else {
-          // Transform backend data to include CO2 calculations
-          dailyEnergyData.value = dailyResponse.data.map(item => ({
-            date: item.date,
-            energy: parseFloat(item.energy || 0),
-            co2: parseFloat(item.energy || 0) * emissionFactor.value,
-            recordCount: parseInt(item.recordCount || 0)
-          }))
-          console.log('Fetched daily energy data from backend:', dailyEnergyData.value.length, 'days')
-        }
-        
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        // Set empty arrays to prevent further errors
-        historicalData.value = []
-        dailyEnergyData.value = []
-      }
-    }
+
     
     // Fetch today's energy data from backend
     const fetchTodayEnergyData = async () => {
@@ -1025,6 +1075,10 @@ export default {
       getUserEmailFromToken()
       connectMQTT()
       fetchDeviceInfo()
+      
+      // Set default preset to 'Today' when component loads
+      setDatePreset('today')
+      
       fetchHistoricalData()
       fetchTodayEnergyData()
       await fetchTodayPowerData()
@@ -1049,9 +1103,21 @@ export default {
       }
       
       setTimeout(initChart, 300)
+      
+      // Add resize event listener for chart responsiveness
+      window.addEventListener('resize', handleResize)
     })
     
+    // Handle window resize for chart responsiveness
+    const handleResize = () => {
+      if (uplotChart.value && uplotContainer.value) {
+        const newWidth = uplotContainer.value.clientWidth || 800
+        uplotChart.value.setSize({ width: newWidth, height: 400 })
+      }
+    }
+    
     onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
       disconnectMQTT()
       // Cleanup chart with proper error handling
       if (powerChart.value) {
@@ -1066,6 +1132,319 @@ export default {
         } finally {
           powerChart.value = null
         }
+      }
+      // Cleanup uPlot chart
+      if (uplotChart.value) {
+        try {
+          uplotChart.value.destroy()
+        } catch (error) {
+          console.warn('Error destroying uPlot chart on unmount:', error)
+        } finally {
+          uplotChart.value = null
+        }
+      }
+    })
+    
+    // History tab functionality
+    const startDate = ref(null)
+    const endDate = ref(null)
+    const dateRange = ref(null)
+    const selectedPreset = ref('')
+    const isLoadingHistory = ref(false)
+    const historicalDataFetched = ref(false)
+    const uplotContainer = ref(null)
+    const uplotChart = ref(null)
+    
+    // History computed properties
+    const totalEnergy = computed(() => {
+      if (!historicalData.value || historicalData.value.length === 0) return 0
+      const firstRecord = historicalData.value[0]
+      const lastRecord = historicalData.value[historicalData.value.length - 1]
+      return Math.max(0, (lastRecord.Ett || 0) - (firstRecord.Ett || 0))
+    })
+    
+    const historicalTotalCO2 = computed(() => {
+      return calculateCO2Emissions(totalEnergy.value, emissionFactor.value)
+    })
+    
+    // Date preset functions
+    const setDatePreset = (preset) => {
+      selectedPreset.value = preset
+      const today = new Date()
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      
+      let start, end
+      
+      switch (preset) {
+        case 'today':
+          start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+          break
+        case 'yesterday':
+          start = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
+          end = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)
+          break
+        case 'last7days':
+          const last7Days = new Date(today)
+          last7Days.setDate(last7Days.getDate() - 7)
+          start = new Date(last7Days.getFullYear(), last7Days.getMonth(), last7Days.getDate())
+          end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+          break
+        case 'last30days':
+          const last30Days = new Date(today)
+          last30Days.setDate(last30Days.getDate() - 30)
+          start = new Date(last30Days.getFullYear(), last30Days.getMonth(), last30Days.getDate())
+          end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+          break
+      }
+      
+      // Update both individual dates and range
+      startDate.value = start
+      endDate.value = end
+      dateRange.value = [start, end]
+    }
+    
+    const onDateRangeChange = () => {
+      selectedPreset.value = '' // Clear preset when manually selecting dates
+      if (dateRange.value && dateRange.value.length === 2) {
+        startDate.value = dateRange.value[0]
+        endDate.value = dateRange.value[1]
+        // Ensure end date includes the full day
+        if (endDate.value) {
+          endDate.value.setHours(23, 59, 59, 999)
+        }
+      }
+    }
+    
+    // Fetch historical data from backend
+    const fetchHistoricalData = async () => {
+      if (!startDate.value || !endDate.value) {
+        alert('Please select a date range')
+        return
+      }
+      
+      isLoadingHistory.value = true
+      historicalDataFetched.value = false
+      
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          router.push('/login')
+          return
+        }
+        
+        const startDateStr = startDate.value.toISOString().split('T')[0] + ' 00:00:00'
+        const endDateStr = endDate.value.toISOString().split('T')[0] + ' 23:59:59'
+        
+        const response = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}/history`, {
+          params: {
+            startDate: startDateStr,
+            endDate: endDateStr
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        historicalData.value = response.data
+        historicalDataFetched.value = true
+        
+        // Create uPlot chart after data is loaded
+        if (historicalData.value.length > 0) {
+          await nextTick()
+          // Add small delay to ensure container is fully rendered
+          setTimeout(() => {
+            createUPlotChart()
+          }, 100)
+        }
+        
+      } catch (error) {
+        console.error('Error fetching historical data:', error)
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token')
+          router.push('/login')
+        } else {
+          alert('Failed to fetch historical data. Please try again.')
+        }
+      } finally {
+        isLoadingHistory.value = false
+      }
+    }
+    
+    // Create uPlot chart for high-performance visualization
+    const createUPlotChart = () => {
+      if (!uplotContainer.value || !historicalData.value.length) {
+        return
+      }
+      
+      // Destroy existing chart
+      if (uplotChart.value) {
+        try {
+          uplotChart.value.destroy()
+        } catch (e) {
+          console.warn('Error destroying existing chart:', e)
+        }
+        uplotChart.value = null
+      }
+      
+      // Prepare data for uPlot
+      const timestamps = []
+      const powerData = []
+      const co2Data = []
+      
+      // Sort historical data by time to ensure proper ordering
+      const sortedData = [...historicalData.value].sort((a, b) => new Date(a.time) - new Date(b.time))
+      
+      sortedData.forEach(record => {
+        const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
+        const totalPower = (record.Pa || 0) + (record.Pb || 0) + (record.Pc || 0)
+        const co2 = calculateCO2Emissions(record.Ett || 0, emissionFactor.value)
+        
+        timestamps.push(timestamp)
+        powerData.push(totalPower)
+        co2Data.push(co2)
+      })
+      
+      const data = [timestamps, powerData, co2Data]
+      
+      // Ensure container has proper dimensions
+      const containerWidth = uplotContainer.value.clientWidth || 800
+      const containerHeight = 400
+      
+      const opts = {
+        title: 'Power Consumption & CO2 Emissions Over Time',
+        width: containerWidth,
+        height: containerHeight,
+        series: [
+          {},
+          {
+            label: 'Total Power (W)',
+            stroke: '#3498db',
+            width: 2,
+            scale: 'power'
+          },
+          {
+            label: 'CO2 Emissions (kg)',
+            stroke: '#e74c3c',
+            width: 2,
+            scale: 'co2'
+          }
+        ],
+        axes: [
+          {
+            scale: 'x',
+            values: (u, vals) => vals.map(v => new Date(v * 1000).toLocaleString())
+          },
+          {
+            scale: 'power',
+            label: 'Power (W)',
+            labelGap: 8,
+            side: 3,
+            grid: { show: true }
+          },
+          {
+            scale: 'co2',
+            label: 'CO2 (kg)',
+            labelGap: 8,
+            side: 1,
+            grid: { show: false }
+          }
+        ],
+        scales: {
+          x: {
+            time: true
+          },
+          power: {
+            auto: true
+          },
+          co2: {
+            auto: true
+          }
+        }
+      }
+      
+      try {
+        uplotChart.value = new uPlot(opts, data, uplotContainer.value)
+      } catch (error) {
+        console.error('Error creating uPlot chart:', error)
+        uplotChart.value = null
+      }
+    }
+    
+    // CSV download functionality
+    const downloadCSV = () => {
+      if (!historicalData.value || historicalData.value.length === 0) {
+        alert('No data available to download')
+        return
+      }
+      
+      // Prepare CSV headers
+      const headers = [
+        'Timestamp',
+        'Voltage A (V)', 'Voltage B (V)', 'Voltage C (V)',
+        'Current A (A)', 'Current B (A)', 'Current C (A)',
+        'Power A (W)', 'Power B (W)', 'Power C (W)',
+        'Total Power (W)',
+        'Power Factor A', 'Power Factor B', 'Power Factor C',
+        'Energy Import (kWh)', 'Energy Export (kWh)', 'Energy Total (kWh)',
+        'CO2 Emissions (kg)'
+      ]
+      
+      // Prepare CSV rows
+      const rows = historicalData.value.map(record => {
+        const totalPower = (record.Pa || 0) + (record.Pb || 0) + (record.Pc || 0)
+        const co2 = calculateCO2Emissions(record.Ett || 0, emissionFactor.value)
+        
+        return [
+          new Date(record.time).toLocaleString(),
+          record.Va || 0, record.Vb || 0, record.Vc || 0,
+          record.Ia || 0, record.Ib || 0, record.Ic || 0,
+          record.Pa || 0, record.Pb || 0, record.Pc || 0,
+          totalPower,
+          record.PFa || 0, record.PFb || 0, record.PFc || 0,
+          record.Eim || 0, record.Eex || 0, record.Ett || 0,
+          co2.toFixed(4)
+        ]
+      })
+      
+      // Create CSV content
+      const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n')
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      
+      const dateRange = formatDateRange()
+      const filename = `sensor_data_${espId.value}_${dateRange.replace(/\s+/g, '_')}.csv`
+      link.setAttribute('download', filename)
+      
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
+    
+    // Utility functions
+    const formatEnergy = (energy) => {
+      return energy.toFixed(3)
+    }
+    
+    const formatDateRange = () => {
+      if (!startDate.value || !endDate.value) return ''
+      const start = startDate.value.toLocaleDateString()
+      const end = endDate.value.toLocaleDateString()
+      return `${start} - ${end}`
+    }
+    
+    // Cleanup uPlot chart on unmount
+    onUnmounted(() => {
+      if (uplotChart.value) {
+        uplotChart.value.destroy()
       }
     })
     
@@ -1103,7 +1482,25 @@ export default {
       // User account management
       userEmail,
       logout,
-      router
+      router,
+      // History tab
+      startDate,
+      endDate,
+      dateRange,
+      selectedPreset,
+      isLoadingHistory,
+      historicalDataFetched,
+      uplotContainer,
+      uplotChart,
+      totalEnergy,
+      historicalTotalCO2,
+      setDatePreset,
+      onDateRangeChange,
+      fetchHistoricalData,
+      downloadCSV,
+      formatEnergy,
+      formatDateRange,
+      createUPlotChart
     }
   }
 }
@@ -1731,10 +2128,345 @@ export default {
 }
 
 .history-content {
-  padding: 40px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+}
+
+.history-controls {
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.date-range-section h3 {
+  margin-bottom: 24px;
+  color: #2c3e50;
+  font-weight: 700;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-range-section h3::before {
+  content: '📅';
+  font-size: 1.2rem;
+}
+
+.date-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.preset-buttons .p-button {
+  border-radius: 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preset-buttons .p-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.date-pickers {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border-radius: 12px;
+  border-left: 4px solid #2196f3;
+}
+
+.date-picker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 300px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.date-picker-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-picker-group label::before {
+  content: '🗓️';
+  font-size: 0.9rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.action-buttons .p-button {
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+}
+
+.action-buttons .p-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.action-buttons .p-button-success {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  border: none;
+}
+
+.action-buttons .p-button:not(.p-button-success) {
+  background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
+  border: none;
+}
+
+.loading-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 20px 0;
+}
+
+.loading-content {
   text-align: center;
   color: #666;
+}
+
+.loading-content .pi-spinner {
+  color: #2196f3;
+  margin-bottom: 16px;
+  animation: pulse 2s infinite;
+}
+
+.loading-content p {
+  margin-top: 16px;
   font-size: 1.2rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.history-results {
+  margin-top: 32px;
+  animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.data-summary {
+  margin-bottom: 32px;
+}
+
+.data-summary .p-card {
+  border-radius: 16px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.data-summary .p-card-title {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin: -1.25rem -1.25rem 1.25rem -1.25rem;
+  padding: 20px 24px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.data-summary .p-card-title::before {
+  content: '📊';
+  font-size: 1.4rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border-left: 4px solid #2196f3;
+  transition: all 0.3s ease;
+}
+
+.summary-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-left-color: #1976d2;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-label::before {
+  content: '▶';
+  color: #2196f3;
+  font-size: 0.8rem;
+}
+
+.summary-value {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 1.2rem;
+  text-align: right;
+}
+
+.chart-section {
+  margin-bottom: 32px;
+}
+
+.chart-section .p-card {
+  border-radius: 16px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.chart-section .p-card-title {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  margin: -1.25rem -1.25rem 1.25rem -1.25rem;
+  padding: 20px 24px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-section .p-card-title::before {
+  content: '📈';
+  font-size: 1.4rem;
+}
+
+.uplot-container {
+  width: 100%;
+  height: 450px;
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #666;
+}
+
+.chart-loading p {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.no-data-section {
+  margin-top: 32px;
+}
+
+.no-data-section .p-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 2px dashed #dee2e6;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.no-data-content {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.no-data-content .pi-info-circle {
+  color: #17a2b8 !important;
+  margin-bottom: 20px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+.no-data-content h3 {
+  margin: 20px 0 16px 0;
+  color: #2c3e50;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.no-data-content p {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #6c757d;
+  line-height: 1.6;
 }
 
 @keyframes fadeIn {
@@ -1765,5 +2497,150 @@ export default {
   .dashboard-header h1 {
     font-size: 2rem;
   }
+  
+  /* History tab mobile optimizations */
+  .history-content {
+    padding: 16px;
+  }
+  
+  .history-controls {
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  
+  .date-range-section h3 {
+    font-size: 1.2rem;
+    text-align: center;
+  }
+  
+  .preset-buttons {
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .preset-buttons .p-button {
+    font-size: 0.85rem;
+    padding: 8px 16px;
+  }
+  
+  .date-pickers {
+    padding: 16px;
+  }
+  
+  .date-picker-group {
+    min-width: 100%;
+    max-width: 100%;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .action-buttons .p-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .summary-item {
+    padding: 12px 16px;
+  }
+  
+  .summary-label {
+    font-size: 0.9rem;
+  }
+  
+  .summary-value {
+    font-size: 1.1rem;
+  }
+  
+  .uplot-container {
+    height: 300px;
+  }
+  
+  .data-summary .p-card-title,
+  .chart-section .p-card-title {
+    font-size: 1.1rem;
+    padding: 16px 20px;
+  }
+  
+  .loading-section {
+    padding: 40px 16px;
+  }
+  
+  .no-data-content {
+    padding: 40px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .history-content {
+    padding: 12px;
+  }
+  
+  .history-controls {
+    padding: 16px;
+  }
+  
+  .date-range-section h3 {
+    font-size: 1.1rem;
+  }
+  
+  .preset-buttons .p-button {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+  
+  .summary-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .summary-value {
+    text-align: center;
+  }
+  
+  .uplot-container {
+    height: 250px;
+  }
+}
+
+
+
+/* Input field styling */
+:deep(.p-inputtext) {
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+:deep(.p-inputtext:focus) {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+  outline: none;
+}
+
+:deep(.p-inputtext:hover) {
+  border-color: #90caf9;
+}
+
+/* Icon styling */
+:deep(.p-datepicker-trigger) {
+  color: #6c757d;
+  margin-left: 8px;
+  transition: color 0.3s ease;
+}
+
+:deep(.p-datepicker-trigger:hover) {
+  color: #2196f3;
 }
 </style>

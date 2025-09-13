@@ -1,4 +1,5 @@
 import './assets/main.css'
+import './assets/datepicker-styles.css'
 import 'primeicons/primeicons.css'
 
 import { createApp } from 'vue'
