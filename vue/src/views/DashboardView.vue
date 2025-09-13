@@ -345,6 +345,61 @@
                 </template>
               </Card>
             </div>
+            
+            <!-- Comprehensive Sensor Data Chart -->
+            <div class="comprehensive-chart-section">
+              <Card>
+                <template #title>Comprehensive Sensor Data</template>
+                <template #content>
+                  <div class="chart-controls">
+                    <div class="chart-type-selector">
+                      <Button 
+                        label="Voltage" 
+                        @click="setComprehensiveChartType('voltage')" 
+                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'voltage' }"
+                        size="small"
+                      />
+                      <Button 
+                        label="Current" 
+                        @click="setComprehensiveChartType('current')" 
+                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'current' }"
+                        size="small"
+                      />
+                      <Button 
+                        label="Power" 
+                        @click="setComprehensiveChartType('power')" 
+                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'power' }"
+                        size="small"
+                      />
+                      <Button 
+                        label="Power Factor" 
+                        @click="setComprehensiveChartType('powerfactor')" 
+                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'powerfactor' }"
+                        size="small"
+                      />
+                      <Button 
+                        label="Energy" 
+                        @click="setComprehensiveChartType('energy')" 
+                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'energy' }"
+                        size="small"
+                      />
+                      <Button 
+                        label="All Parameters" 
+                        @click="setComprehensiveChartType('all')" 
+                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'all' }"
+                        size="small"
+                      />
+                    </div>
+                  </div>
+                  <div ref="comprehensiveUplotContainer" class="uplot-container comprehensive-chart">
+                    <div v-if="!comprehensiveUplotChart" class="chart-loading">
+                      <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #666;"></i>
+                      <p>Loading comprehensive chart...</p>
+                    </div>
+                  </div>
+                </template>
+              </Card>
+            </div>
           </div>
           
           <div v-else-if="!isLoadingHistory && historicalDataFetched" class="no-data-section">
@@ -1216,6 +1271,11 @@ export default {
     const uplotContainer = ref(null)
     const uplotChart = ref(null)
     
+    // Comprehensive sensor data chart
+    const comprehensiveUplotContainer = ref(null)
+    const comprehensiveUplotChart = ref(null)
+    const comprehensiveChartType = ref('all') // voltage, current, power, powerfactor, energy, all
+    
     // History computed properties
     const totalEnergy = computed(() => {
       if (!historicalData.value || historicalData.value.length === 0) return 0
@@ -1311,13 +1371,14 @@ export default {
         historicalData.value = response.data
         historicalDataFetched.value = true
         
-        // Create uPlot chart after data is loaded
+        // Create uPlot charts after data is loaded
         if (historicalData.value.length > 0) {
           await nextTick()
-          // Add small delay to ensure container is fully rendered
+          // Add small delay to ensure containers are fully rendered
           setTimeout(() => {
             createUPlotChart()
-            // Setup resize observer after chart is created
+            createComprehensiveUPlotChart()
+            // Setup resize observer after charts are created
             setupResizeObserver()
           }, 100)
         }
@@ -1615,10 +1676,274 @@ export default {
       return `${start} - ${end}`
     }
     
-    // Cleanup uPlot chart on unmount
+    // Comprehensive chart functions
+    const setComprehensiveChartType = (type) => {
+      comprehensiveChartType.value = type
+      if (historicalData.value && historicalData.value.length > 0) {
+        createComprehensiveUPlotChart()
+      }
+    }
+    
+    const createComprehensiveUPlotChart = () => {
+      if (!comprehensiveUplotContainer.value || !historicalData.value.length) {
+        return
+      }
+      
+      // Ensure container has proper dimensions
+      const initRect = comprehensiveUplotContainer.value.getBoundingClientRect()
+      if (initRect.width === 0 || initRect.height === 0) {
+        setTimeout(() => {
+          createComprehensiveUPlotChart()
+        }, 50)
+        return
+      }
+      
+      // Destroy existing chart
+      if (comprehensiveUplotChart.value) {
+        try {
+          comprehensiveUplotChart.value.destroy()
+        } catch (e) {
+          console.warn('Error destroying existing comprehensive chart:', e)
+        }
+        comprehensiveUplotChart.value = null
+      }
+      
+      // Prepare data based on chart type
+      const timestamps = []
+      const seriesData = []
+      const seriesConfig = []
+      const scales = { x: { time: true, auto: true } }
+      const axes = [{
+        scale: 'x',
+        space: 80,
+        incrs: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400, 604800],
+        values: (u, vals) => {
+          if (!vals || vals.length === 0) return []
+          
+          const minTime = Math.min(...vals)
+          const maxTime = Math.max(...vals)
+          const timeSpanHours = (maxTime - minTime) / 3600
+          
+          return vals.map(v => {
+            const date = new Date(v * 1000)
+            
+            if (timeSpanHours <= 24) {
+              return date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+              })
+            } else if (timeSpanHours <= 168) {
+              return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric'
+              }) + '\n' + date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              })
+            } else {
+              return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: '2-digit'
+              })
+            }
+          })
+        }
+      }]
+      
+      // Sort historical data by time
+      const sortedData = [...historicalData.value].sort((a, b) => new Date(a.time) - new Date(b.time))
+      
+      // Prepare timestamps
+      sortedData.forEach(record => {
+        timestamps.push(new Date(record.time).getTime() / 1000)
+      })
+      
+      // Configure series based on chart type
+      if (comprehensiveChartType.value === 'voltage') {
+        const vaData = [], vbData = [], vcData = []
+        sortedData.forEach(record => {
+          vaData.push(parseFloat(record.Va) || 0)
+          vbData.push(parseFloat(record.Vb) || 0)
+          vcData.push(parseFloat(record.Vc) || 0)
+        })
+        seriesData.push(timestamps, vaData, vbData, vcData)
+        seriesConfig.push(
+          {},
+          { label: 'Voltage A (V)', stroke: '#e74c3c', width: 2, scale: 'voltage' },
+          { label: 'Voltage B (V)', stroke: '#f39c12', width: 2, scale: 'voltage' },
+          { label: 'Voltage C (V)', stroke: '#3498db', width: 2, scale: 'voltage' }
+        )
+        scales.voltage = { auto: true }
+        axes.push({ scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } })
+        
+      } else if (comprehensiveChartType.value === 'current') {
+        const iaData = [], ibData = [], icData = []
+        sortedData.forEach(record => {
+          iaData.push(parseFloat(record.Ia) || 0)
+          ibData.push(parseFloat(record.Ib) || 0)
+          icData.push(parseFloat(record.Ic) || 0)
+        })
+        seriesData.push(timestamps, iaData, ibData, icData)
+        seriesConfig.push(
+          {},
+          { label: 'Current A (A)', stroke: '#e74c3c', width: 2, scale: 'current' },
+          { label: 'Current B (A)', stroke: '#f39c12', width: 2, scale: 'current' },
+          { label: 'Current C (A)', stroke: '#3498db', width: 2, scale: 'current' }
+        )
+        scales.current = { auto: true }
+        axes.push({ scale: 'current', label: 'Current (A)', labelGap: 8, side: 3, grid: { show: true } })
+        
+      } else if (comprehensiveChartType.value === 'power') {
+        const paData = [], pbData = [], pcData = [], totalPowerData = []
+        sortedData.forEach(record => {
+          const pa = parseFloat(record.Pa) || 0
+          const pb = parseFloat(record.Pb) || 0
+          const pc = parseFloat(record.Pc) || 0
+          paData.push(pa)
+          pbData.push(pb)
+          pcData.push(pc)
+          totalPowerData.push(pa + pb + pc)
+        })
+        seriesData.push(timestamps, paData, pbData, pcData, totalPowerData)
+        seriesConfig.push(
+          {},
+          { label: 'Power A (W)', stroke: '#e74c3c', width: 2, scale: 'power' },
+          { label: 'Power B (W)', stroke: '#f39c12', width: 2, scale: 'power' },
+          { label: 'Power C (W)', stroke: '#3498db', width: 2, scale: 'power' },
+          { label: 'Total Power (W)', stroke: '#2ecc71', width: 3, scale: 'power' }
+        )
+        scales.power = { auto: true }
+        axes.push({ scale: 'power', label: 'Power (W)', labelGap: 8, side: 3, grid: { show: true } })
+        
+      } else if (comprehensiveChartType.value === 'powerfactor') {
+        const pfaData = [], pfbData = [], pfcData = []
+        sortedData.forEach(record => {
+          pfaData.push(parseFloat(record.PFa) || 0)
+          pfbData.push(parseFloat(record.PFb) || 0)
+          pfcData.push(parseFloat(record.PFc) || 0)
+        })
+        seriesData.push(timestamps, pfaData, pfbData, pfcData)
+        seriesConfig.push(
+          {},
+          { label: 'Power Factor A', stroke: '#e74c3c', width: 2, scale: 'pf' },
+          { label: 'Power Factor B', stroke: '#f39c12', width: 2, scale: 'pf' },
+          { label: 'Power Factor C', stroke: '#3498db', width: 2, scale: 'pf' }
+        )
+        scales.pf = { auto: true, range: [0, 1] }
+        axes.push({ scale: 'pf', label: 'Power Factor', labelGap: 8, side: 3, grid: { show: true } })
+        
+      } else if (comprehensiveChartType.value === 'energy') {
+        const ettData = []
+        sortedData.forEach(record => {
+          ettData.push(parseFloat(record.Ett) || 0)
+        })
+        seriesData.push(timestamps, ettData)
+        seriesConfig.push(
+          {},
+          { label: 'Total Energy (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
+        )
+        scales.energy = { auto: true }
+        axes.push({ scale: 'energy', label: 'Energy (kWh)', labelGap: 8, side: 3, grid: { show: true } })
+        
+      } else if (comprehensiveChartType.value === 'all') {
+        const vaData = [], vbData = [], vcData = []
+        const iaData = [], ibData = [], icData = []
+        const paData = [], pbData = [], pcData = []
+        const pfaData = [], pfbData = [], pfcData = []
+        const ettData = []
+        
+        sortedData.forEach(record => {
+          // Voltage data
+          vaData.push(parseFloat(record.Va) || 0)
+          vbData.push(parseFloat(record.Vb) || 0)
+          vcData.push(parseFloat(record.Vc) || 0)
+          // Current data
+          iaData.push(parseFloat(record.Ia) || 0)
+          ibData.push(parseFloat(record.Ib) || 0)
+          icData.push(parseFloat(record.Ic) || 0)
+          // Power data
+          paData.push(parseFloat(record.Pa) || 0)
+          pbData.push(parseFloat(record.Pb) || 0)
+          pcData.push(parseFloat(record.Pc) || 0)
+          // Power Factor data
+          pfaData.push(parseFloat(record.PFa) || 0)
+          pfbData.push(parseFloat(record.PFb) || 0)
+          pfcData.push(parseFloat(record.PFc) || 0)
+          // Energy Total
+          ettData.push(parseFloat(record.Ett) || 0)
+        })
+        
+        seriesData.push(timestamps, vaData, vbData, vcData, iaData, ibData, icData, paData, pbData, pcData, pfaData, pfbData, pfcData, ettData)
+        seriesConfig.push(
+          {},
+          // Voltage series
+          { label: 'Va (V)', stroke: '#e74c3c', width: 2, scale: 'voltage' },
+          { label: 'Vb (V)', stroke: '#c0392b', width: 2, scale: 'voltage' },
+          { label: 'Vc (V)', stroke: '#a93226', width: 2, scale: 'voltage' },
+          // Current series
+          { label: 'Ia (A)', stroke: '#f39c12', width: 2, scale: 'current' },
+          { label: 'Ib (A)', stroke: '#e67e22', width: 2, scale: 'current' },
+          { label: 'Ic (A)', stroke: '#d35400', width: 2, scale: 'current' },
+          // Power series
+          { label: 'Pa (W)', stroke: '#3498db', width: 2, scale: 'power' },
+          { label: 'Pb (W)', stroke: '#2980b9', width: 2, scale: 'power' },
+          { label: 'Pc (W)', stroke: '#1f618d', width: 2, scale: 'power' },
+          // Power Factor series
+          { label: 'PFa', stroke: '#2ecc71', width: 2, scale: 'pf' },
+          { label: 'PFb', stroke: '#27ae60', width: 2, scale: 'pf' },
+          { label: 'PFc', stroke: '#229954', width: 2, scale: 'pf' },
+          // Energy Total
+          { label: 'Ett (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
+        )
+        
+        scales.voltage = { auto: true }
+        scales.current = { auto: true }
+        scales.power = { auto: true }
+        scales.pf = { auto: true, range: [0, 1] }
+        scales.energy = { auto: true }
+        
+        axes.push(
+          { scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } },
+          { scale: 'current', label: 'Current (A)', labelGap: 8, side: 1, grid: { show: false } },
+          { scale: 'power', label: 'Power (W)', labelGap: 8, side: 3, grid: { show: false } },
+          { scale: 'pf', label: 'Power Factor', labelGap: 8, side: 1, grid: { show: false } },
+          { scale: 'energy', label: 'Energy (kWh)', labelGap: 8, side: 3, grid: { show: false } }
+        )
+      }
+      
+      // Get container dimensions
+      const chartRect = comprehensiveUplotContainer.value.getBoundingClientRect()
+      const containerWidth = Math.max(chartRect.width, 400)
+      const containerHeight = 400
+      
+      const opts = {
+        title: `Comprehensive Sensor Data - ${comprehensiveChartType.value.charAt(0).toUpperCase() + comprehensiveChartType.value.slice(1)}`,
+        width: containerWidth,
+        height: containerHeight,
+        series: seriesConfig,
+        axes: axes,
+        scales: scales
+      }
+      
+      try {
+        comprehensiveUplotChart.value = new uPlot(opts, seriesData, comprehensiveUplotContainer.value)
+        console.log('Comprehensive uPlot chart created successfully')
+      } catch (error) {
+        console.error('Error creating comprehensive uPlot chart:', error)
+        comprehensiveUplotChart.value = null
+      }
+    }
+    
+    // Cleanup uPlot charts on unmount
     onUnmounted(() => {
       if (uplotChart.value) {
         uplotChart.value.destroy()
+      }
+      if (comprehensiveUplotChart.value) {
+        comprehensiveUplotChart.value.destroy()
       }
     })
     
@@ -1666,6 +1991,9 @@ export default {
       historicalDataFetched,
       uplotContainer,
       uplotChart,
+      comprehensiveUplotContainer,
+      comprehensiveUplotChart,
+      comprehensiveChartType,
       totalEnergy,
       historicalTotalCO2,
       setDatePreset,
@@ -1674,7 +2002,9 @@ export default {
       downloadCSV,
       formatEnergy,
       formatDateRange,
-      createUPlotChart
+      createUPlotChart,
+      setComprehensiveChartType,
+      createComprehensiveUPlotChart
     }
   }
 }
