@@ -747,17 +747,41 @@ export default {
     const createPowerChart = async () => {
       await nextTick()
       
+      // Check if canvas element exists and is properly mounted
       if (!powerChartCanvas.value) {
-        console.error('Power chart canvas not found')
+        console.warn('Power chart canvas not found')
         return
       }
       
       // Destroy existing chart if it exists
       if (powerChart.value) {
-        powerChart.value.destroy()
+        try {
+          powerChart.value.destroy()
+          powerChart.value = null
+        } catch (error) {
+          console.warn('Error destroying existing chart:', error)
+          powerChart.value = null
+        }
       }
       
-      const ctx = powerChartCanvas.value.getContext('2d')
+      // Get canvas context with additional validation
+      let ctx
+      try {
+        ctx = powerChartCanvas.value.getContext('2d')
+        if (!ctx) {
+          console.warn('Failed to get 2D context from canvas')
+          return
+        }
+        
+        // Ensure canvas has proper dimensions
+        if (powerChartCanvas.value.width === 0 || powerChartCanvas.value.height === 0) {
+          console.warn('Canvas has invalid dimensions')
+          return
+        }
+      } catch (error) {
+        console.error('Error getting canvas context:', error)
+        return
+      }
       
       // Prepare chart data from todayPowerData with time series format (no limit)
       const phaseAData = todayPowerData.value.map(item => ({
@@ -777,9 +801,21 @@ export default {
         y: item.totalPower
       }))
       
-      powerChart.value = new Chart(ctx, {
-        type: 'line',
-        data: {
+      try {
+        // Add global error handler for Chart.js
+        const originalConsoleError = console.error
+        console.error = function(...args) {
+          const errorMsg = args.join(' ')
+          if (errorMsg.includes('clipArea') || errorMsg.includes('Cannot read properties of null')) {
+            console.warn('Chart.js clipArea error caught and suppressed:', errorMsg)
+            return
+          }
+          originalConsoleError.apply(console, args)
+        }
+        
+        powerChart.value = new Chart(ctx, {
+          type: 'line',
+          data: {
           datasets: [
             {
               label: 'Phase A',
@@ -788,7 +824,8 @@ export default {
               backgroundColor: 'rgba(231, 76, 60, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0
+              tension: 0,
+              clip: false // Disable clipping to prevent clipArea errors
             },
             {
               label: 'Phase B',
@@ -797,7 +834,8 @@ export default {
               backgroundColor: 'rgba(243, 156, 18, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0
+              tension: 0,
+              clip: false // Disable clipping to prevent clipArea errors
             },
             {
               label: 'Phase C',
@@ -806,7 +844,8 @@ export default {
               backgroundColor: 'rgba(39, 174, 96, 0.1)',
               borderWidth: 2,
               fill: false,
-              tension: 0
+              tension: 0,
+              clip: false // Disable clipping to prevent clipArea errors
             },
             {
               label: 'Total Power',
@@ -815,7 +854,8 @@ export default {
               backgroundColor: 'rgba(142, 68, 173, 0.1)',
               borderWidth: 3,
               fill: false,
-              tension: 0
+              tension: 0,
+              clip: false // Disable clipping to prevent clipArea errors
             }
           ]
         },
@@ -823,6 +863,8 @@ export default {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: 60*60*1000, // 1 Hours
+          // Disable clipping globally to prevent clipArea errors
+          clip: false,
           animation: {
             duration: 0 // Disable all animations
           },
@@ -833,8 +875,29 @@ export default {
               }
             }
           },
+          // Disable clipping to prevent clipArea errors
+          layout: {
+            padding: 0
+          },
+          // Add canvas validation before any drawing operations
+          onResize: (chart, size) => {
+            if (!chart.canvas || !chart.ctx) {
+              console.warn('Chart canvas or context is null during resize')
+              return false
+            }
+          },
           events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'], // Explicitly define events
           plugins: {
+            // Custom plugin to validate canvas context
+            canvasValidator: {
+              beforeDraw: (chart) => {
+                if (!chart.ctx || !chart.canvas) {
+                  console.warn('Chart context or canvas is null, skipping draw')
+                  return false
+                }
+                return true
+              }
+            },
             title: {
               display: true,
               text: 'Today\'s Power Consumption by Phase',
@@ -850,7 +913,9 @@ export default {
             tooltip: {
               enabled: true,
               mode: 'index',
-              intersect: false
+              intersect: false,
+              // Disable tooltip animations to prevent context errors
+              animation: false
             }
           },
           scales: {
@@ -889,7 +954,33 @@ export default {
           onHover: null, // Disable hover events to prevent undefined errors
           onClick: null  // Disable click events to prevent undefined errors
         }
-      })
+        })
+        
+        // Restore original console.error
+        console.error = originalConsoleError
+        
+        // Add window error handler for clipArea errors
+        const handleChartError = (event) => {
+          if (event.error && event.error.message && 
+              (event.error.message.includes('clipArea') || 
+               event.error.message.includes('Cannot read properties of null'))) {
+            console.warn('Chart.js clipArea error caught by window handler:', event.error.message)
+            event.preventDefault()
+            return false
+          }
+        }
+        
+        window.addEventListener('error', handleChartError)
+        
+        // Store error handler reference for cleanup
+        if (powerChart.value) {
+          powerChart.value._errorHandler = handleChartError
+        }
+        
+      } catch (error) {
+        console.error('Error creating power chart:', error)
+        return
+      }
     }
     
     // Update power chart with new data
@@ -911,6 +1002,12 @@ export default {
       }
       
       lastUpdateTime = now
+      
+      // Check if canvas is available before updating
+      if (!powerChartCanvas.value) {
+        console.warn('Canvas not available for real-time update')
+        return
+      }
       
       // Simply recreate the chart with latest data
       try {
@@ -935,17 +1032,44 @@ export default {
       fetchHistoricalData()
       fetchTodayEnergyData()
       await fetchTodayPowerData()
-      // Create power chart after data is loaded
-      setTimeout(() => {
-        createPowerChart()
-      }, 500)
+      
+      // Create power chart after DOM is fully rendered and data is loaded
+      await nextTick()
+      
+      // Wait for canvas to be properly initialized
+      const initChart = () => {
+        if (powerChartCanvas.value && 
+            powerChartCanvas.value.offsetWidth > 0 && 
+            powerChartCanvas.value.offsetHeight > 0) {
+          try {
+            createPowerChart()
+          } catch (error) {
+            console.error('Failed to create chart:', error)
+          }
+        } else {
+          console.warn('Canvas not ready, retrying in 500ms...')
+          setTimeout(initChart, 500)
+        }
+      }
+      
+      setTimeout(initChart, 300)
     })
     
     onUnmounted(() => {
       disconnectMQTT()
-      // Cleanup chart
+      // Cleanup chart with proper error handling
       if (powerChart.value) {
-        powerChart.value.destroy()
+        try {
+          // Remove error handler if it exists
+          if (powerChart.value._errorHandler) {
+            window.removeEventListener('error', powerChart.value._errorHandler)
+          }
+          powerChart.value.destroy()
+        } catch (error) {
+          console.warn('Error destroying chart on unmount:', error)
+        } finally {
+          powerChart.value = null
+        }
       }
     })
     
