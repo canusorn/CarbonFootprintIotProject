@@ -768,6 +768,34 @@ export default {
       }
     }
     
+    // Fetch daily energy data from backend
+    const fetchDailyEnergyData = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`http://localhost:3000/api/daily-energy/${espId.value}`, {
+          params: {
+            days: 30 // Get last 30 days
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.data && Array.isArray(response.data)) {
+          dailyEnergyData.value = response.data.map(item => ({
+            date: item.date,
+            energy: parseFloat(item.energy || 0),
+            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            recordCount: parseInt(item.recordCount || 0)
+          }))
+          console.log('Fetched daily energy data:', dailyEnergyData.value.length, 'records')
+        }
+      } catch (error) {
+        console.error('Error fetching daily energy data:', error)
+        dailyEnergyData.value = []
+      }
+    }
+    
     // Fetch today's power data from backend
     const fetchTodayPowerData = async () => {
       try {
@@ -1086,6 +1114,7 @@ export default {
       
       fetchHistoricalData()
       fetchTodayEnergyData()
+      fetchDailyEnergyData()
       await fetchTodayPowerData()
       
       // Create power chart after DOM is fully rendered and data is loaded
