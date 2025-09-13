@@ -238,30 +238,16 @@
             <div class="date-range-section">
               <h3>Select Date Range</h3>
               <div class="date-controls">
-                <div class="preset-buttons">
-                  <Button 
-                    label="Today" 
-                    @click="setDatePreset('today')" 
-                    :class="{ 'p-button-outlined': selectedPreset !== 'today' }"
-                    size="small"
-                  />
-                  <Button 
-                    label="Yesterday" 
-                    @click="setDatePreset('yesterday')" 
-                    :class="{ 'p-button-outlined': selectedPreset !== 'yesterday' }"
-                    size="small"
-                  />
-                  <Button 
-                    label="Last 7 Days" 
-                    @click="setDatePreset('last7days')" 
-                    :class="{ 'p-button-outlined': selectedPreset !== 'last7days' }"
-                    size="small"
-                  />
-                  <Button 
-                    label="Last 30 Days" 
-                    @click="setDatePreset('last30days')" 
-                    :class="{ 'p-button-outlined': selectedPreset !== 'last30days' }"
-                    size="small"
+                <div class="preset-dropdown">
+                  <label>Quick Select:</label>
+                  <Dropdown 
+                    v-model="selectedPreset" 
+                    :options="datePresetOptions" 
+                    optionLabel="label" 
+                    optionValue="value" 
+                    placeholder="Select date range"
+                    @change="onPresetChange"
+                    class="preset-selector"
                   />
                 </div>
                 <div class="date-pickers">
@@ -352,42 +338,16 @@
                 <template #title>Comprehensive Sensor Data</template>
                 <template #content>
                   <div class="chart-controls">
-                    <div class="chart-type-selector">
-                      <Button 
-                        label="Voltage" 
-                        @click="setComprehensiveChartType('voltage')" 
-                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'voltage' }"
-                        size="small"
-                      />
-                      <Button 
-                        label="Current" 
-                        @click="setComprehensiveChartType('current')" 
-                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'current' }"
-                        size="small"
-                      />
-                      <Button 
-                        label="Power" 
-                        @click="setComprehensiveChartType('power')" 
-                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'power' }"
-                        size="small"
-                      />
-                      <Button 
-                        label="Power Factor" 
-                        @click="setComprehensiveChartType('powerfactor')" 
-                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'powerfactor' }"
-                        size="small"
-                      />
-                      <Button 
-                        label="Energy" 
-                        @click="setComprehensiveChartType('energy')" 
-                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'energy' }"
-                        size="small"
-                      />
-                      <Button 
-                        label="All Parameters" 
-                        @click="setComprehensiveChartType('all')" 
-                        :class="{ 'p-button-outlined': comprehensiveChartType !== 'all' }"
-                        size="small"
+                    <div class="chart-type-dropdown">
+                      <label>Chart Type:</label>
+                      <Dropdown 
+                        v-model="comprehensiveChartType" 
+                        :options="chartTypeOptions" 
+                        optionLabel="label" 
+                        optionValue="value" 
+                        placeholder="Select chart type"
+                        @change="onChartTypeChange"
+                        class="chart-type-selector"
                       />
                     </div>
                   </div>
@@ -434,6 +394,7 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
+import Dropdown from 'primevue/dropdown'
 import uPlot from 'uplot'
 import 'uplot/dist/uPlot.min.css'
 import DataCard from '@/components/DataCard.vue'
@@ -465,7 +426,7 @@ export default {
     DataCard,
     EnergyCard,
     CO2Card,
-    DailyEnergyChart
+    DailyEnergyChart,Dropdown
   },
   setup() {
     const route = useRoute()
@@ -1276,6 +1237,23 @@ export default {
     const comprehensiveUplotChart = ref(null)
     const comprehensiveChartType = ref('all') // voltage, current, power, powerfactor, energy, all
     
+    // Dropdown options
+    const datePresetOptions = [
+      { label: 'Today', value: 'today' },
+      { label: 'Yesterday', value: 'yesterday' },
+      { label: 'Last 7 Days', value: 'last7days' },
+      { label: 'Last 30 Days', value: 'last30days' }
+    ]
+    
+    const chartTypeOptions = [
+      { label: 'Voltage', value: 'voltage' },
+      { label: 'Current', value: 'current' },
+      { label: 'Power', value: 'power' },
+      { label: 'Power Factor', value: 'powerfactor' },
+      { label: 'Energy', value: 'energy' },
+      { label: 'All Parameters', value: 'all' }
+    ]
+    
     // History computed properties
     const totalEnergy = computed(() => {
       if (!historicalData.value || historicalData.value.length === 0) return 0
@@ -1684,6 +1662,15 @@ export default {
       }
     }
     
+    // Dropdown change handlers
+    const onPresetChange = (event) => {
+      setDatePreset(event.value)
+    }
+    
+    const onChartTypeChange = (event) => {
+      setComprehensiveChartType(event.value)
+    }
+    
     const createComprehensiveUPlotChart = () => {
       if (!comprehensiveUplotContainer.value || !historicalData.value.length) {
         return
@@ -2004,7 +1991,12 @@ export default {
       formatDateRange,
       createUPlotChart,
       setComprehensiveChartType,
-      createComprehensiveUPlotChart
+      createComprehensiveUPlotChart,
+      // Dropdown options and handlers
+      datePresetOptions,
+      chartTypeOptions,
+      onPresetChange,
+      onChartTypeChange
     }
   }
 }
@@ -2667,26 +2659,44 @@ export default {
   gap: 24px;
 }
 
-.preset-buttons {
+.preset-dropdown {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
   padding: 16px;
   background: #f8f9fa;
   border-radius: 12px;
   border: 2px dashed #dee2e6;
 }
 
-.preset-buttons .p-button {
-  border-radius: 20px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.preset-dropdown label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
 }
 
-.preset-buttons .p-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+.preset-selector {
+  min-width: 200px;
+}
+
+.chart-type-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.chart-type-dropdown label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.chart-type-selector {
+  min-width: 250px;
 }
 
 .date-pickers {
@@ -3017,14 +3027,20 @@ export default {
     text-align: center;
   }
   
-  .preset-buttons {
-    justify-content: center;
-    gap: 8px;
+  .preset-dropdown {
+    padding: 12px;
   }
   
-  .preset-buttons .p-button {
-    font-size: 0.85rem;
-    padding: 8px 16px;
+  .preset-selector {
+    min-width: 100%;
+  }
+  
+  .chart-type-dropdown {
+    padding: 12px;
+  }
+  
+  .chart-type-selector {
+    min-width: 100%;
   }
   
   .date-pickers {
@@ -3095,9 +3111,9 @@ export default {
     font-size: 1.1rem;
   }
   
-  .preset-buttons .p-button {
-    font-size: 0.8rem;
-    padding: 6px 12px;
+  .preset-selector,
+  .chart-type-selector {
+    font-size: 0.9rem;
   }
   
   .summary-item {
