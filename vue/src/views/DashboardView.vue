@@ -453,16 +453,21 @@ export default {
     
     // Computed properties
     const totalPower = computed(() => {
-      return (sensorData.value.Pa || 0) + (sensorData.value.Pb || 0) + (sensorData.value.Pc || 0)
+      const Pa = parseFloat(sensorData.value.Pa) || 0
+      const Pb = parseFloat(sensorData.value.Pb) || 0
+      const Pc = parseFloat(sensorData.value.Pc) || 0
+      return Pa + Pb + Pc
     })
     
     const totalCO2 = computed(() => {
-      return calculateCO2Emissions(sensorData.value.Ett || 0, emissionFactor.value)
+      const energyValue = parseFloat(sensorData.value.Ett) || 0
+      return calculateCO2Emissions(energyValue, emissionFactor.value)
     })
     
     const dailyCO2 = computed(() => {
       // Calculate daily CO2 from today's energy consumption
-      return calculateCO2Emissions(todayEnergyData.value.todayEnergy || 0, emissionFactor.value)
+      const energyValue = parseFloat(todayEnergyData.value.todayEnergy) || 0
+      return calculateCO2Emissions(energyValue, emissionFactor.value)
     })
     
     // Real-time three-phase CO2 calculations
@@ -1298,8 +1303,14 @@ export default {
       
       sortedData.forEach(record => {
         const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
-        const totalPower = (record.Pa || 0) + (record.Pb || 0) + (record.Pc || 0)
-        const co2 = calculateCO2Emissions(record.Ett || 0, emissionFactor.value)
+        // Convert power values to numbers to prevent NaN
+        const Pa = parseFloat(record.Pa) || 0
+        const Pb = parseFloat(record.Pb) || 0
+        const Pc = parseFloat(record.Pc) || 0
+        const totalPower = Pa + Pb + Pc
+        // Convert Ett to number to ensure proper type for CO2 calculation
+        const energyValue = parseFloat(record.Ett) || 0
+        const co2 = calculateCO2Emissions(energyValue, emissionFactor.value)
         
         timestamps.push(timestamp)
         powerData.push(totalPower)
@@ -1334,7 +1345,46 @@ export default {
         axes: [
           {
             scale: 'x',
-            values: (u, vals) => vals.map(v => new Date(v * 1000).toLocaleString())
+            space: 80,
+            incrs: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400, 604800],
+            values: (u, vals) => {
+              if (!vals || vals.length === 0) return []
+              
+              // Calculate the time span of the data
+              const minTime = Math.min(...vals)
+              const maxTime = Math.max(...vals)
+              const timeSpanHours = (maxTime - minTime) / 3600
+              
+              return vals.map(v => {
+                const date = new Date(v * 1000)
+                
+                if (timeSpanHours <= 24) {
+                  // Less than 24 hours - show time only
+                  return date.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                  })
+                } else if (timeSpanHours <= 168) {
+                  // Less than 7 days - show month/day and time
+                  return date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric'
+                  }) + '\n' + date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                  })
+                } else {
+                  // More than 7 days - show date only
+                  return date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric',
+                    year: '2-digit'
+                  })
+                }
+              })
+            }
           },
           {
             scale: 'power',
@@ -1353,7 +1403,8 @@ export default {
         ],
         scales: {
           x: {
-            time: true
+            time: true,
+            auto: true
           },
           power: {
             auto: true
@@ -1393,8 +1444,12 @@ export default {
       
       // Prepare CSV rows
       const rows = historicalData.value.map(record => {
-        const totalPower = (record.Pa || 0) + (record.Pb || 0) + (record.Pc || 0)
-        const co2 = calculateCO2Emissions(record.Ett || 0, emissionFactor.value)
+        const Pa = parseFloat(record.Pa) || 0
+        const Pb = parseFloat(record.Pb) || 0
+        const Pc = parseFloat(record.Pc) || 0
+        const totalPower = Pa + Pb + Pc
+        const energyValue = parseFloat(record.Ett) || 0
+        const co2 = calculateCO2Emissions(energyValue, emissionFactor.value)
         
         return [
           new Date(record.time).toLocaleString(),
