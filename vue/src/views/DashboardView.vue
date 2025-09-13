@@ -11,34 +11,16 @@
             <div v-if="!isEditingDeviceName" class="device-name-display">
               <span class="device-name">{{ currentDevice.name || 'Unknown Device' }}</span>
               <span class="device-id">({{ espId }})</span>
-              <Button 
-                icon="pi pi-pencil" 
-                class="p-button-text p-button-sm edit-btn"
-                @click="startEditingDeviceName"
-                v-tooltip="'Edit device name'"
-              />
+              <Button icon="pi pi-pencil" class="p-button-text p-button-sm edit-btn" @click="startEditingDeviceName"
+                v-tooltip="'Edit device name'" />
             </div>
             <div v-else class="device-name-edit">
-              <InputText 
-                v-model="editingDeviceName" 
-                class="device-name-input"
-                @keyup.enter="saveDeviceName"
-                @keyup.escape="cancelEditingDeviceName"
-                ref="deviceNameInput"
-              />
-              <Button 
-                icon="pi pi-check" 
-                class="p-button-success p-button-sm save-btn"
-                @click="saveDeviceName"
-                :loading="isSavingDeviceName"
-                v-tooltip="'Save'"
-              />
-              <Button 
-                icon="pi pi-times" 
-                class="p-button-text p-button-sm cancel-btn"
-                @click="cancelEditingDeviceName"
-                v-tooltip="'Cancel'"
-              />
+              <InputText v-model="editingDeviceName" class="device-name-input" @keyup.enter="saveDeviceName"
+                @keyup.escape="cancelEditingDeviceName" ref="deviceNameInput" />
+              <Button icon="pi pi-check" class="p-button-success p-button-sm save-btn" @click="saveDeviceName"
+                :loading="isSavingDeviceName" v-tooltip="'Save'" />
+              <Button icon="pi pi-times" class="p-button-text p-button-sm cancel-btn" @click="cancelEditingDeviceName"
+                v-tooltip="'Cancel'" />
             </div>
           </div>
         </div>
@@ -49,16 +31,12 @@
             <i class="pi pi-user" style="color: #2c3e50; margin-right: 8px;"></i>
             <span class="user-email">{{ userEmail }}</span>
           </div>
-          <Button 
-            icon="pi pi-sign-out" 
-            class="p-button-text p-button-sm logout-btn"
-            @click="logout"
-            v-tooltip="'Logout'"
-          />
+          <Button icon="pi pi-sign-out" class="p-button-text p-button-sm logout-btn" @click="logout"
+            v-tooltip="'Logout'" />
         </div>
       </div>
     </div>
-    
+
     <TabView :activeIndex="0">
       <TabPanel header="Overview">
         <div class="overview-content">
@@ -103,8 +81,9 @@
           <!-- Real-time Power Display -->
           <div class="realtime-power-section">
             <div class="power-section-header">
-              <i class="pi pi-flash" style="color: #e74c3c;"></i>
-              <h3>Real-time Power (3-Phase)</h3>
+              <i class="pi pi-flash" :style="{ color: isUsingFallbackData ? '#f39c12' : '#e74c3c' }"></i>
+              <h3>{{ isUsingFallbackData ? 'Today\'s Power Consumption (Last Data)' : 'Real-time Power (3-Phase)' }}
+              </h3>
             </div>
             <div class="power-phases-grid">
               <div class="phase-card phase-a">
@@ -131,7 +110,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="phase-card phase-b">
                 <div class="phase-header">
                   <span class="phase-label">Phase B</span>
@@ -156,7 +135,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="phase-card phase-c">
                 <div class="phase-header">
                   <span class="phase-label">Phase C</span>
@@ -181,7 +160,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <div class="phase-card total-power">
                 <div class="phase-header">
                   <span class="phase-label">Total Power</span>
@@ -225,13 +204,10 @@
           </div>
 
           <!-- Daily Energy Chart -->
-          <DailyEnergyChart
-            :daily-energy-data="dailyEnergyData"
-            :emission-factor="emissionFactor"
-          />
+          <DailyEnergyChart :daily-energy-data="dailyEnergyData" :emission-factor="emissionFactor" />
         </div>
       </TabPanel>
-      
+
       <TabPanel header="History">
         <div class="history-content">
           <div class="history-controls">
@@ -240,57 +216,34 @@
               <div class="date-controls">
                 <div class="preset-dropdown">
                   <label>Quick Select:</label>
-                  <Dropdown 
-                    v-model="selectedPreset" 
-                    :options="datePresetOptions" 
-                    optionLabel="label" 
-                    optionValue="value" 
-                    placeholder="Select date range"
-                    @change="onPresetChange"
-                    class="preset-selector"
-                  />
+                  <Dropdown v-model="selectedPreset" :options="datePresetOptions" optionLabel="label"
+                    optionValue="value" placeholder="Select date range" @change="onPresetChange"
+                    class="preset-selector" />
                 </div>
                 <div class="date-pickers">
                   <div class="date-picker-group">
                     <label>Select Date Range:</label>
-                    <DatePicker 
-                      v-model="dateRange" 
-                      selectionMode="range"
-                      dateFormat="yy-mm-dd"
-                      showIcon
-                      :manualInput="false"
-                      placeholder="Select date range"
-                      @date-select="onDateRangeChange"
-                    />
+                    <DatePicker v-model="dateRange" selectionMode="range" dateFormat="yy-mm-dd" showIcon
+                      :manualInput="false" placeholder="Select date range" @date-select="onDateRangeChange" />
                   </div>
                 </div>
                 <div class="action-buttons">
-                  <Button 
-                    label="Fetch Data" 
-                    icon="pi pi-search" 
-                    @click="fetchHistoricalData"
-                    :loading="isLoadingHistory"
-                    :disabled="!dateRange || !dateRange[0] || !dateRange[1]"
-                  />
-                  <Button 
-                    label="Download CSV" 
-                    icon="pi pi-download" 
-                    @click="downloadCSV"
-                    :disabled="!historicalData || historicalData.length === 0"
-                    class="p-button-success"
-                  />
+                  <Button label="Fetch Data" icon="pi pi-search" @click="fetchHistoricalData"
+                    :loading="isLoadingHistory" :disabled="!dateRange || !dateRange[0] || !dateRange[1]" />
+                  <Button label="Download CSV" icon="pi pi-download" @click="downloadCSV"
+                    :disabled="!historicalData || historicalData.length === 0" class="p-button-success" />
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div v-if="isLoadingHistory" class="loading-section">
             <div class="loading-content">
               <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
               <p>Loading historical data...</p>
             </div>
           </div>
-          
+
           <div v-else-if="historicalData && historicalData.length > 0" class="history-results">
             <div class="data-summary">
               <Card>
@@ -317,7 +270,7 @@
                 </template>
               </Card>
             </div>
-            
+
             <div class="chart-section">
               <Card>
                 <template #title>Power Consumption & CO2 Emissions</template>
@@ -331,7 +284,7 @@
                 </template>
               </Card>
             </div>
-            
+
             <!-- Comprehensive Sensor Data Chart -->
             <div class="comprehensive-chart-section">
               <Card>
@@ -340,15 +293,9 @@
                   <div class="chart-controls">
                     <div class="chart-type-dropdown">
                       <label>Chart Type:</label>
-                      <Dropdown 
-                        v-model="comprehensiveChartType" 
-                        :options="chartTypeOptions" 
-                        optionLabel="label" 
-                        optionValue="value" 
-                        placeholder="Select chart type"
-                        @change="onChartTypeChange"
-                        class="chart-type-selector"
-                      />
+                      <Dropdown v-model="comprehensiveChartType" :options="chartTypeOptions" optionLabel="label"
+                        optionValue="value" placeholder="Select chart type" @change="onChartTypeChange"
+                        class="chart-type-selector" />
                     </div>
                   </div>
                   <div ref="comprehensiveUplotContainer" class="uplot-container comprehensive-chart">
@@ -361,7 +308,7 @@
               </Card>
             </div>
           </div>
-          
+
           <div v-else-if="!isLoadingHistory && historicalDataFetched" class="no-data-section">
             <Card>
               <template #content>
@@ -401,12 +348,12 @@ import DataCard from '@/components/DataCard.vue'
 import EnergyCard from '@/components/EnergyCard.vue'
 import CO2Card from '@/components/CO2Card.vue'
 import DailyEnergyChart from '@/components/DailyEnergyChart.vue'
-import { 
-  calculateCO2Emissions, 
-  calculateThreePhaseCO2, 
-  formatCO2, 
+import {
+  calculateCO2Emissions,
+  calculateThreePhaseCO2,
+  formatCO2,
   getCO2Equivalents,
-  EMISSION_FACTORS 
+  EMISSION_FACTORS
 } from '@/services/co2Calculator.js'
 
 // Register Chart.js components
@@ -426,7 +373,7 @@ export default {
     DataCard,
     EnergyCard,
     CO2Card,
-    DailyEnergyChart,Dropdown
+    DailyEnergyChart, Dropdown
   },
   setup() {
     const route = useRoute()
@@ -438,7 +385,7 @@ export default {
       PFa: 0, PFb: 0, PFc: 0,
       Eim: 0, Eex: 0, Ett: 0
     })
-    
+
     const historicalData = ref([])
     const dailyEnergyData = ref([])
     const todayEnergyData = ref({
@@ -454,19 +401,20 @@ export default {
     const powerChart = ref(null)
     const mqttClient = ref(null)
     const isConnected = ref(false)
+    const isUsingFallbackData = ref(false)
     const emissionFactor = ref(EMISSION_FACTORS.THAILAND) // kg CO2 per kWh (Thailand grid factor)
     const espId = ref(route.params.espid || 'ESP001') // Get from route parameter or default
-    
+
     // Device management
     const currentDevice = ref({ name: '', espid: '' })
     const isEditingDeviceName = ref(false)
     const editingDeviceName = ref('')
     const isSavingDeviceName = ref(false)
     const deviceNameInput = ref(null)
-    
+
     // User account management
     const userEmail = ref('')
-    
+
     // Computed properties
     const totalPower = computed(() => {
       const Pa = parseFloat(sensorData.value.Pa) || 0
@@ -474,18 +422,18 @@ export default {
       const Pc = parseFloat(sensorData.value.Pc) || 0
       return Pa + Pb + Pc
     })
-    
+
     const totalCO2 = computed(() => {
       const energyValue = parseFloat(sensorData.value.Ett) || 0
       return calculateCO2Emissions(energyValue, emissionFactor.value)
     })
-    
+
     const dailyCO2 = computed(() => {
       // Calculate daily CO2 from today's energy consumption
       const energyValue = parseFloat(todayEnergyData.value.todayEnergy) || 0
       return calculateCO2Emissions(energyValue, emissionFactor.value)
     })
-    
+
     // Real-time three-phase CO2 calculations
     const phaseCO2Data = computed(() => {
       return calculateThreePhaseCO2(
@@ -498,31 +446,31 @@ export default {
         emissionFactor.value
       )
     })
-    
+
     // CO2 equivalents for better understanding
     const co2Equivalents = computed(() => {
       return getCO2Equivalents(totalCO2.value)
     })
-    
+
     const connectionStatus = computed(() => {
       return isConnected.value ? 'Connected' : 'Disconnected'
     })
-    
+
     const connectionStatusIcon = computed(() => {
       return isConnected.value ? 'pi pi-check-circle' : 'pi pi-times-circle'
     })
-    
+
     const connectionStatusColor = computed(() => {
       return isConnected.value ? '#4CAF50' : '#F44336'
     })
-    
 
-    
+
+
     // MQTT Connection
     const connectMQTT = () => {
       const timestamp = Date.now()
       const clientId = `WEB${timestamp}_${espId.value}`
-      
+
       try {
         mqttClient.value = mqtt.connect('ws://localhost:8083', {
           clientId: clientId,
@@ -532,11 +480,11 @@ export default {
           username: 'web',
           password: 'pi'
         })
-        
+
         mqttClient.value.on('connect', () => {
           console.log('MQTT Connected')
           isConnected.value = true
-          
+
           // Subscribe to ESP device topics
           mqttClient.value.subscribe(`${espId.value}/#`, (err) => {
             if (err) {
@@ -546,33 +494,39 @@ export default {
             }
           })
         })
-        
+
         mqttClient.value.on('message', (topic, message) => {
           try {
             if (topic === `${espId.value}/update`) {
               const data = JSON.parse(message.toString())
               sensorData.value = { ...sensorData.value, ...data }
-              
+
+              // Reset fallback flag when new MQTT data is received
+              if (isUsingFallbackData.value) {
+                isUsingFallbackData.value = false
+                console.log('Switched back to real-time MQTT data')
+              }
+
               // Update today's energy calculation when new MQTT data arrives
               if (data.Ett !== undefined && todayEnergyData.value.startEnergy > 0) {
                 const currentEnergy = parseFloat(data.Ett)
                 const calculatedTodayEnergy = currentEnergy - todayEnergyData.value.startEnergy
-                
+
                 // Update today's energy data
                 todayEnergyData.value = {
                   ...todayEnergyData.value,
                   todayEnergy: Math.max(0, calculatedTodayEnergy), // Ensure non-negative
                   endEnergy: currentEnergy
                 }
-                
+
                 // Update DailyEnergyChart with today's real-time data
                 const todayDate = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
                 const todayEnergy = Math.max(0, calculatedTodayEnergy)
                 const todayCO2 = todayEnergy * emissionFactor.value
-                
+
                 // Find today's entry in dailyEnergyData or create new one
                 const todayIndex = dailyEnergyData.value.findIndex(item => item.date === todayDate)
-                
+
                 if (todayIndex >= 0) {
                   // Update existing today's entry
                   dailyEnergyData.value[todayIndex] = {
@@ -588,17 +542,17 @@ export default {
                     co2: todayCO2,
                     recordCount: 1
                   })
-                  
+
                   // Keep only last 30 days
                   if (dailyEnergyData.value.length > 30) {
                     dailyEnergyData.value = dailyEnergyData.value.slice(-30)
                   }
                 }
               }
-              
+
               // Add new data point to todayPowerData for synchronization
               const currentTime = new Date().toISOString()
-              
+
               // Use direct push to avoid spread operator overhead
               todayPowerData.value.push({
                 time: currentTime,
@@ -607,12 +561,12 @@ export default {
                 Pc: parseFloat(data.Pc || 0),
                 totalPower: parseFloat(data.Pa || 0) + parseFloat(data.Pb || 0) + parseFloat(data.Pc || 0)
               })
-              
+
               // Keep all data points - no data limiting to preserve historical data
-              
+
               // Update power chart with new real-time data
               updatePowerChartRealtime(data)
-              
+
               console.log('Received sensor data:', data)
               console.log('Updated today energy:', todayEnergyData.value.todayEnergy)
             }
@@ -620,23 +574,23 @@ export default {
             console.error('Error parsing MQTT message:', error)
           }
         })
-        
+
         mqttClient.value.on('error', (error) => {
           console.error('MQTT Error:', error)
           isConnected.value = false
         })
-        
+
         mqttClient.value.on('close', () => {
           console.log('MQTT Disconnected')
           isConnected.value = false
         })
-        
+
       } catch (error) {
         console.error('MQTT Connection Error:', error)
         isConnected.value = false
       }
     }
-    
+
     // Disconnect MQTT
     const disconnectMQTT = () => {
       if (mqttClient.value) {
@@ -646,31 +600,31 @@ export default {
         console.log('MQTT Disconnected')
       }
     }
-    
+
     // Daily energy calculation is now handled by the backend via SQL queries
     // This improves performance for large datasets by offloading computation to the database
-    
+
     // Device management methods
     const fetchDeviceInfo = async () => {
       try {
         const token = localStorage.getItem('token')
         console.log('Fetching device info for ESP ID:', espId.value)
         console.log('Using token:', token ? 'Token present' : 'No token found')
-        
+
         if (!token) {
           console.error('No authentication token found')
           currentDevice.value = { name: 'Unknown Device', espid: espId.value }
           return
         }
-        
+
         const response = await axios.get(`http://localhost:3000/api/devices/${espId.value}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         })
-        
+
         console.log('Device info response:', response.data)
-        
+
         if (response.data) {
           currentDevice.value = response.data
           console.log('Device info updated:', currentDevice.value)
@@ -682,7 +636,7 @@ export default {
         currentDevice.value = { name: 'Unknown Device', espid: espId.value }
       }
     }
-    
+
     const startEditingDeviceName = () => {
       editingDeviceName.value = currentDevice.value.name || ''
       isEditingDeviceName.value = true
@@ -692,19 +646,19 @@ export default {
         }
       })
     }
-    
+
     const cancelEditingDeviceName = () => {
       isEditingDeviceName.value = false
       editingDeviceName.value = ''
     }
-    
+
     const saveDeviceName = async () => {
       if (!editingDeviceName.value.trim()) {
         return
       }
-      
+
       isSavingDeviceName.value = true
-      
+
       try {
         const token = localStorage.getItem('token')
         const response = await axios.put(`http://localhost:3000/api/devices/${espId.value}`, {
@@ -715,7 +669,7 @@ export default {
             'Content-Type': 'application/json'
           }
         })
-        
+
         if (response.data.success) {
           currentDevice.value.name = editingDeviceName.value.trim()
           isEditingDeviceName.value = false
@@ -728,7 +682,7 @@ export default {
         isSavingDeviceName.value = false
       }
     }
-    
+
     // User account management methods
     const getUserEmailFromToken = () => {
       try {
@@ -745,7 +699,7 @@ export default {
         userEmail.value = 'Unknown User'
       }
     }
-    
+
     const logout = () => {
       // Clear authentication token
       localStorage.removeItem('token')
@@ -754,9 +708,9 @@ export default {
       // Redirect to home page
       router.push('/')
     }
-    
 
-    
+
+
     // Fetch today's energy data from backend
     const fetchTodayEnergyData = async () => {
       try {
@@ -766,7 +720,7 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-        
+
         if (response.data) {
           todayEnergyData.value = {
             todayEnergy: parseFloat(response.data.todayEnergy || 0),
@@ -783,7 +737,7 @@ export default {
         // Keep default values on error
       }
     }
-    
+
     // Fetch daily energy data from backend
     const fetchDailyEnergyData = async () => {
       try {
@@ -796,7 +750,7 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-        
+
         if (response.data && Array.isArray(response.data)) {
           dailyEnergyData.value = response.data.map(item => ({
             date: item.date,
@@ -811,7 +765,7 @@ export default {
         dailyEnergyData.value = []
       }
     }
-    
+
     // Fetch today's power data from backend
     const fetchTodayPowerData = async () => {
       try {
@@ -821,7 +775,7 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-        
+
         if (response.data && Array.isArray(response.data)) {
           todayPowerData.value = response.data.map(item => ({
             time: item.time,
@@ -837,17 +791,17 @@ export default {
         todayPowerData.value = []
       }
     }
-    
+
     // Create power line chart
     const createPowerChart = async () => {
       await nextTick()
-      
+
       // Check if canvas element exists and is properly mounted
       if (!powerChartCanvas.value) {
         console.warn('Power chart canvas not found')
         return
       }
-      
+
       // Destroy existing chart if it exists
       if (powerChart.value) {
         try {
@@ -858,7 +812,7 @@ export default {
           powerChart.value = null
         }
       }
-      
+
       // Get canvas context with additional validation
       let ctx
       try {
@@ -867,7 +821,7 @@ export default {
           console.warn('Failed to get 2D context from canvas')
           return
         }
-        
+
         // Ensure canvas has proper dimensions
         if (powerChartCanvas.value.width === 0 || powerChartCanvas.value.height === 0) {
           console.warn('Canvas has invalid dimensions')
@@ -877,7 +831,7 @@ export default {
         console.error('Error getting canvas context:', error)
         return
       }
-      
+
       // Prepare chart data from todayPowerData with time series format (no limit)
       const phaseAData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
@@ -895,11 +849,11 @@ export default {
         x: new Date(item.time),
         y: item.totalPower
       }))
-      
+
       try {
         // Add global error handler for Chart.js
         const originalConsoleError = console.error
-        console.error = function(...args) {
+        console.error = function (...args) {
           const errorMsg = args.join(' ')
           if (errorMsg.includes('clipArea') || errorMsg.includes('Cannot read properties of null')) {
             console.warn('Chart.js clipArea error caught and suppressed:', errorMsg)
@@ -907,203 +861,203 @@ export default {
           }
           originalConsoleError.apply(console, args)
         }
-        
+
         powerChart.value = new Chart(ctx, {
           type: 'line',
           data: {
-          datasets: [
-            {
-              label: 'Phase A',
-              data: phaseAData,
-              borderColor: '#e74c3c',
-              backgroundColor: 'rgba(231, 76, 60, 0.1)',
-              borderWidth: 2,
-              fill: false,
-              tension: 0,
-              clip: false // Disable clipping to prevent clipArea errors
-            },
-            {
-              label: 'Phase B',
-              data: phaseBData,
-              borderColor: '#f39c12',
-              backgroundColor: 'rgba(243, 156, 18, 0.1)',
-              borderWidth: 2,
-              fill: false,
-              tension: 0,
-              clip: false // Disable clipping to prevent clipArea errors
-            },
-            {
-              label: 'Phase C',
-              data: phaseCData,
-              borderColor: '#27ae60',
-              backgroundColor: 'rgba(39, 174, 96, 0.1)',
-              borderWidth: 2,
-              fill: false,
-              tension: 0,
-              clip: false // Disable clipping to prevent clipArea errors
-            },
-            {
-              label: 'Total Power',
-              data: totalPowerData,
-              borderColor: '#8e44ad',
-              backgroundColor: 'rgba(142, 68, 173, 0.1)',
-              borderWidth: 3,
-              fill: false,
-              tension: 0,
-              clip: false // Disable clipping to prevent clipArea errors
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          spanGaps: 60*60*1000, // 1 Hours
-          // Disable clipping globally to prevent clipArea errors
-          clip: false,
-          animation: {
-            duration: 0 // Disable all animations
-          },
-          transitions: {
-            active: {
-              animation: {
-                duration: 0 // Disable active transitions
+            datasets: [
+              {
+                label: 'Phase A',
+                data: phaseAData,
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0,
+                clip: false // Disable clipping to prevent clipArea errors
+              },
+              {
+                label: 'Phase B',
+                data: phaseBData,
+                borderColor: '#f39c12',
+                backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0,
+                clip: false // Disable clipping to prevent clipArea errors
+              },
+              {
+                label: 'Phase C',
+                data: phaseCData,
+                borderColor: '#27ae60',
+                backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0,
+                clip: false // Disable clipping to prevent clipArea errors
+              },
+              {
+                label: 'Total Power',
+                data: totalPowerData,
+                borderColor: '#8e44ad',
+                backgroundColor: 'rgba(142, 68, 173, 0.1)',
+                borderWidth: 3,
+                fill: false,
+                tension: 0,
+                clip: false // Disable clipping to prevent clipArea errors
               }
-            }
+            ]
           },
-          // Disable clipping to prevent clipArea errors
-          layout: {
-            padding: 0
-          },
-          // Add canvas validation before any drawing operations
-          onResize: (chart, size) => {
-            if (!chart.canvas || !chart.ctx) {
-              console.warn('Chart canvas or context is null during resize')
-              return false
-            }
-          },
-          events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'], // Explicitly define events
-          plugins: {
-            // Custom plugin to validate canvas context
-            canvasValidator: {
-              beforeDraw: (chart) => {
-                if (!chart.ctx || !chart.canvas) {
-                  console.warn('Chart context or canvas is null, skipping draw')
-                  return false
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            spanGaps: 60 * 60 * 1000, // 1 Hours
+            // Disable clipping globally to prevent clipArea errors
+            clip: false,
+            animation: {
+              duration: 0 // Disable all animations
+            },
+            transitions: {
+              active: {
+                animation: {
+                  duration: 0 // Disable active transitions
                 }
-                return true
               }
             },
-            title: {
-              display: true,
-              text: 'Today\'s Power Consumption by Phase',
-              font: {
-                size: 16,
-                weight: 'bold'
+            // Disable clipping to prevent clipArea errors
+            layout: {
+              padding: 0
+            },
+            // Add canvas validation before any drawing operations
+            onResize: (chart, size) => {
+              if (!chart.canvas || !chart.ctx) {
+                console.warn('Chart canvas or context is null during resize')
+                return false
               }
             },
-            legend: {
-              display: true,
-              position: 'top'
-            },
-            tooltip: {
-              enabled: true,
-              mode: 'index',
-              intersect: false,
-              // Disable tooltip animations to prevent context errors
-              animation: false
-            }
-          },
-          scales: {
-            x: {
-              type: 'time',
-              display: true,
+            events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'], // Explicitly define events
+            plugins: {
+              // Custom plugin to validate canvas context
+              canvasValidator: {
+                beforeDraw: (chart) => {
+                  if (!chart.ctx || !chart.canvas) {
+                    console.warn('Chart context or canvas is null, skipping draw')
+                    return false
+                  }
+                  return true
+                }
+              },
               title: {
                 display: true,
-                text: 'Time'
+                text: 'Today\'s Power Consumption by Phase',
+                font: {
+                  size: 16,
+                  weight: 'bold'
+                }
               },
-              time: {
-                displayFormats: {
-                  minute: 'HH:mm',
-                  hour: 'HH:mm'
+              legend: {
+                display: true,
+                position: 'top'
+              },
+              tooltip: {
+                enabled: true,
+                mode: 'index',
+                intersect: false,
+                // Disable tooltip animations to prevent context errors
+                animation: false
+              }
+            },
+            scales: {
+              x: {
+                type: 'time',
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Time'
                 },
-                tooltipFormat: 'MMM dd, HH:mm:ss'
+                time: {
+                  displayFormats: {
+                    minute: 'HH:mm',
+                    hour: 'HH:mm'
+                  },
+                  tooltipFormat: 'MMM dd, HH:mm:ss'
+                },
+                ticks: {
+                  maxTicksLimit: 10,
+                  source: 'auto'
+                }
               },
-              ticks: {
-                maxTicksLimit: 10,
-                source: 'auto'
+              y: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Power (W)'
+                },
+                beginAtZero: true
               }
             },
-            y: {
-              display: true,
-              title: {
-                display: true,
-                text: 'Power (W)'
-              },
-              beginAtZero: true
-            }
-          },
-          interaction: {
-            intersect: false,
-            mode: 'index'
-          },
-          onHover: null, // Disable hover events to prevent undefined errors
-          onClick: null  // Disable click events to prevent undefined errors
-        }
+            interaction: {
+              intersect: false,
+              mode: 'index'
+            },
+            onHover: null, // Disable hover events to prevent undefined errors
+            onClick: null  // Disable click events to prevent undefined errors
+          }
         })
-        
+
         // Restore original console.error
         console.error = originalConsoleError
-        
+
         // Add window error handler for clipArea errors
         const handleChartError = (event) => {
-          if (event.error && event.error.message && 
-              (event.error.message.includes('clipArea') || 
-               event.error.message.includes('Cannot read properties of null'))) {
+          if (event.error && event.error.message &&
+            (event.error.message.includes('clipArea') ||
+              event.error.message.includes('Cannot read properties of null'))) {
             console.warn('Chart.js clipArea error caught by window handler:', event.error.message)
             event.preventDefault()
             return false
           }
         }
-        
+
         window.addEventListener('error', handleChartError)
-        
+
         // Store error handler reference for cleanup
         if (powerChart.value) {
           powerChart.value._errorHandler = handleChartError
         }
-        
+
       } catch (error) {
         console.error('Error creating power chart:', error)
         return
       }
     }
-    
+
     // Update power chart with new data
     const updatePowerChart = () => {
       // Simply recreate the chart to avoid update errors
       createPowerChart()
     }
-    
+
     // Simplified real-time update - recreate chart to avoid errors
     let lastUpdateTime = 0
     const UPDATE_THROTTLE = 5000 // 5 seconds between updates
-    
+
     const updatePowerChartRealtime = (updateVar) => {
       if (!updateVar) return
-      
+
       const now = Date.now()
       if (now - lastUpdateTime < UPDATE_THROTTLE) {
         return // Throttle updates
       }
-      
+
       lastUpdateTime = now
-      
+
       // Check if canvas is available before updating
       if (!powerChartCanvas.value) {
         console.warn('Canvas not available for real-time update')
         return
       }
-      
+
       // Simply recreate the chart with latest data
       try {
         createPowerChart()
@@ -1111,36 +1065,68 @@ export default {
         console.warn('Error recreating power chart:', error)
       }
     }
-    
 
-    
+
+
     // Format timestamp for display
     const formatTimestamp = (timestamp) => {
       return new Date(timestamp).toLocaleString()
     }
-    
+
+    // Function to populate sensorData with last available data
+    const populateWithLastData = () => {
+      if (todayPowerData.value.length > 0) {
+        const lastRecord = todayPowerData.value[todayPowerData.value.length - 1]
+        console.log('Using last available data for power display:', lastRecord)
+
+        // Set fallback data flag
+        isUsingFallbackData.value = true
+
+        // Update sensorData with last known power values
+        sensorData.value = {
+          ...sensorData.value,
+          Pa: lastRecord.Pa || 0,
+          Pb: lastRecord.Pb || 0,
+          Pc: lastRecord.Pc || 0,
+          // Keep other sensor values as they are or set defaults
+          Va: sensorData.value.Va || 220,
+          Vb: sensorData.value.Vb || 220,
+          Vc: sensorData.value.Vc || 220,
+          Ia: sensorData.value.Ia || (lastRecord.Pa / 220) || 0,
+          Ib: sensorData.value.Ib || (lastRecord.Pb / 220) || 0,
+          Ic: sensorData.value.Ic || (lastRecord.Pc / 220) || 0,
+          PFa: sensorData.value.PFa || 0.85,
+          PFb: sensorData.value.PFb || 0.85,
+          PFc: sensorData.value.PFc || 0.85,
+          Ett: todayEnergyData.value.endEnergy || 0
+        }
+      }
+    }
+
     // Lifecycle hooks
     onMounted(async () => {
       getUserEmailFromToken()
       connectMQTT()
       fetchDeviceInfo()
-      
+
       // Set default preset to 'Today' when component loads
       setDatePreset('today')
-      
+
       fetchHistoricalData()
       fetchTodayEnergyData()
       fetchDailyEnergyData()
       await fetchTodayPowerData()
-      
+
+      populateWithLastData();
+
       // Create power chart after DOM is fully rendered and data is loaded
       await nextTick()
-      
+
       // Wait for canvas to be properly initialized
       const initChart = () => {
-        if (powerChartCanvas.value && 
-            powerChartCanvas.value.offsetWidth > 0 && 
-            powerChartCanvas.value.offsetHeight > 0) {
+        if (powerChartCanvas.value &&
+          powerChartCanvas.value.offsetWidth > 0 &&
+          powerChartCanvas.value.offsetHeight > 0) {
           try {
             createPowerChart()
           } catch (error) {
@@ -1151,20 +1137,20 @@ export default {
           setTimeout(initChart, 500)
         }
       }
-      
+
       setTimeout(initChart, 300)
-      
+
       // Add resize event listener for chart responsiveness
       window.addEventListener('resize', handleResize)
     })
-    
+
     // Handle window resize for chart responsiveness
     const handleResize = () => {
       if (uplotChart.value && uplotContainer.value) {
         const resizeRect = uplotContainer.value.getBoundingClientRect()
         const newWidth = Math.max(resizeRect.width, 400) // Minimum width of 400px
         const newHeight = 400
-        
+
         try {
           uplotChart.value.setSize({ width: newWidth, height: newHeight })
         } catch (error) {
@@ -1172,10 +1158,10 @@ export default {
         }
       }
     }
-    
+
     // ResizeObserver for better container size detection
     const resizeObserver = ref(null)
-    
+
     const setupResizeObserver = () => {
       if (uplotContainer.value && window.ResizeObserver) {
         resizeObserver.value = new ResizeObserver((entries) => {
@@ -1188,7 +1174,7 @@ export default {
         resizeObserver.value.observe(uplotContainer.value)
       }
     }
-    
+
     onUnmounted(() => {
       window.removeEventListener('resize', handleResize)
       if (resizeObserver.value) {
@@ -1221,7 +1207,7 @@ export default {
         }
       }
     })
-    
+
     // History tab functionality
     const startDate = ref(null)
     const endDate = ref(null)
@@ -1231,12 +1217,12 @@ export default {
     const historicalDataFetched = ref(false)
     const uplotContainer = ref(null)
     const uplotChart = ref(null)
-    
+
     // Comprehensive sensor data chart
     const comprehensiveUplotContainer = ref(null)
     const comprehensiveUplotChart = ref(null)
     const comprehensiveChartType = ref('all') // voltage, current, power, powerfactor, energy, all
-    
+
     // Dropdown options
     const datePresetOptions = [
       { label: 'Today', value: 'today' },
@@ -1244,7 +1230,7 @@ export default {
       { label: 'Last 7 Days', value: 'last7days' },
       { label: 'Last 30 Days', value: 'last30days' }
     ]
-    
+
     const chartTypeOptions = [
       { label: 'Voltage', value: 'voltage' },
       { label: 'Current', value: 'current' },
@@ -1253,7 +1239,7 @@ export default {
       { label: 'Energy', value: 'energy' },
       { label: 'All Parameters', value: 'all' }
     ]
-    
+
     // History computed properties
     const totalEnergy = computed(() => {
       if (!historicalData.value || historicalData.value.length === 0) return 0
@@ -1261,20 +1247,20 @@ export default {
       const lastRecord = historicalData.value[historicalData.value.length - 1]
       return Math.max(0, (lastRecord.Ett || 0) - (firstRecord.Ett || 0))
     })
-    
+
     const historicalTotalCO2 = computed(() => {
       return calculateCO2Emissions(totalEnergy.value, emissionFactor.value)
     })
-    
+
     // Date preset functions
     const setDatePreset = (preset) => {
       selectedPreset.value = preset
       const today = new Date()
       const yesterday = new Date(today)
       yesterday.setDate(yesterday.getDate() - 1)
-      
+
       let start, end
-      
+
       switch (preset) {
         case 'today':
           start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
@@ -1297,13 +1283,13 @@ export default {
           end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
           break
       }
-      
+
       // Update both individual dates and range
       startDate.value = start
       endDate.value = end
       dateRange.value = [start, end]
     }
-    
+
     const onDateRangeChange = () => {
       selectedPreset.value = '' // Clear preset when manually selecting dates
       if (dateRange.value && dateRange.value.length === 2) {
@@ -1315,27 +1301,27 @@ export default {
         }
       }
     }
-    
+
     // Fetch historical data from backend
     const fetchHistoricalData = async () => {
       if (!startDate.value || !endDate.value) {
         alert('Please select a date range')
         return
       }
-      
+
       isLoadingHistory.value = true
       historicalDataFetched.value = false
-      
+
       try {
         const token = localStorage.getItem('token')
         if (!token) {
           router.push('/login')
           return
         }
-        
+
         const startDateStr = startDate.value.toISOString().split('T')[0] + ' 00:00:00'
         const endDateStr = endDate.value.toISOString().split('T')[0] + ' 23:59:59'
-        
+
         const response = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}/history`, {
           params: {
             startDate: startDateStr,
@@ -1345,10 +1331,10 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-        
+
         historicalData.value = response.data
         historicalDataFetched.value = true
-        
+
         // Create uPlot charts after data is loaded
         if (historicalData.value.length > 0) {
           await nextTick()
@@ -1360,7 +1346,7 @@ export default {
             setupResizeObserver()
           }, 100)
         }
-        
+
       } catch (error) {
         console.error('Error fetching historical data:', error)
         if (error.response?.status === 401) {
@@ -1373,13 +1359,13 @@ export default {
         isLoadingHistory.value = false
       }
     }
-    
+
     // Create uPlot chart for high-performance visualization
     const createUPlotChart = () => {
       if (!uplotContainer.value || !historicalData.value.length) {
         return
       }
-      
+
       // Ensure container has proper dimensions before creating chart
       const initRect = uplotContainer.value.getBoundingClientRect()
       if (initRect.width === 0 || initRect.height === 0) {
@@ -1389,7 +1375,7 @@ export default {
         }, 50)
         return
       }
-      
+
       // Destroy existing chart
       if (uplotChart.value) {
         try {
@@ -1399,55 +1385,55 @@ export default {
         }
         uplotChart.value = null
       }
-      
+
       // Prepare data for uPlot - 4 series: power, CO2 from power, energy, cumulative CO2 from energy
       const timestamps = []
       const powerData = []
       const co2FromPowerData = []
       const energyData = []
       const cumulativeCO2FromEnergyData = []
-      
+
       // Sort historical data by time to ensure proper ordering
       const sortedData = [...historicalData.value].sort((a, b) => new Date(a.time) - new Date(b.time))
-      
+
       let cumulativeCO2 = 0
       const baseEnergy = sortedData.length > 0 ? (parseFloat(sortedData[0].Ett) || 0) : 0
-      
+
       sortedData.forEach((record, index) => {
         const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
-        
+
         // 1. Total Power (W)
         const Pa = parseFloat(record.Pa) || 0
         const Pb = parseFloat(record.Pb) || 0
         const Pc = parseFloat(record.Pc) || 0
         const totalPower = Pa + Pb + Pc
-        
+
         // 2. CO2 from Power (instantaneous calculation)
         // Convert power to energy (assuming 1-hour intervals for approximation)
         const powerInKW = totalPower / 1000
         const co2FromPower = calculateCO2Emissions(powerInKW, emissionFactor.value)
-        
+
         // 3. Total Energy (kWh)
         const energyValue = parseFloat(record.Ett) || 0
         const totalEnergy = energyValue - baseEnergy
-        
+
         // 4. Cumulative CO2 from Energy (kg)
         cumulativeCO2 = calculateCO2Emissions(totalEnergy, emissionFactor.value)
-        
+
         timestamps.push(timestamp)
         powerData.push(totalPower)
         co2FromPowerData.push(co2FromPower)
         energyData.push(totalEnergy)
         cumulativeCO2FromEnergyData.push(cumulativeCO2)
       })
-      
+
       const data = [timestamps, powerData, co2FromPowerData, energyData, cumulativeCO2FromEnergyData]
-      
+
       // Get actual container dimensions
       const chartRect = uplotContainer.value.getBoundingClientRect()
       const containerWidth = Math.max(chartRect.width, 400) // Minimum width of 400px
       const containerHeight = 400
-      
+
       const opts = {
         title: 'Power, Energy & CO2 Emissions Over Time',
         width: containerWidth,
@@ -1486,26 +1472,26 @@ export default {
             incrs: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400, 604800],
             values: (u, vals) => {
               if (!vals || vals.length === 0) return []
-              
+
               // Calculate the time span of the data
               const minTime = Math.min(...vals)
               const maxTime = Math.max(...vals)
               const timeSpanHours = (maxTime - minTime) / 3600
-              
+
               return vals.map(v => {
                 const date = new Date(v * 1000)
-                
+
                 if (timeSpanHours <= 24) {
                   // Less than 24 hours - show time only
-                  return date.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
+                  return date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
                     minute: '2-digit',
-                    hour12: false 
+                    hour12: false
                   })
                 } else if (timeSpanHours <= 168) {
                   // Less than 7 days - show month/day and time
-                  return date.toLocaleDateString('en-US', { 
-                    month: 'short', 
+                  return date.toLocaleDateString('en-US', {
+                    month: 'short',
                     day: 'numeric'
                   }) + '\n' + date.toLocaleTimeString('en-US', {
                     hour: '2-digit',
@@ -1514,8 +1500,8 @@ export default {
                   })
                 } else {
                   // More than 7 days - show date only
-                  return date.toLocaleDateString('en-US', { 
-                    month: 'short', 
+                  return date.toLocaleDateString('en-US', {
+                    month: 'short',
                     day: 'numeric',
                     year: '2-digit'
                   })
@@ -1571,7 +1557,7 @@ export default {
           }
         }
       }
-      
+
       try {
         uplotChart.value = new uPlot(opts, data, uplotContainer.value)
         console.log('uPlot chart created successfully with dimensions:', containerWidth, 'x', containerHeight)
@@ -1580,14 +1566,14 @@ export default {
         uplotChart.value = null
       }
     }
-    
+
     // CSV download functionality
     const downloadCSV = () => {
       if (!historicalData.value || historicalData.value.length === 0) {
         alert('No data available to download')
         return
       }
-      
+
       // Prepare CSV headers
       const headers = [
         'Timestamp',
@@ -1599,7 +1585,7 @@ export default {
         'Energy Import (kWh)', 'Energy Export (kWh)', 'Energy Total (kWh)',
         'CO2 Emissions (kg)'
       ]
-      
+
       // Prepare CSV rows
       const rows = historicalData.value.map(record => {
         const Pa = parseFloat(record.Pa) || 0
@@ -1608,7 +1594,7 @@ export default {
         const totalPower = Pa + Pb + Pc
         const energyValue = parseFloat(record.Ett) || 0
         const co2 = calculateCO2Emissions(energyValue, emissionFactor.value)
-        
+
         return [
           new Date(record.time).toLocaleString(),
           record.Va || 0, record.Vb || 0, record.Vc || 0,
@@ -1620,40 +1606,40 @@ export default {
           co2.toFixed(4)
         ]
       })
-      
+
       // Create CSV content
       const csvContent = [headers, ...rows]
         .map(row => row.map(field => `"${field}"`).join(','))
         .join('\n')
-      
+
       // Create and download file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
       link.setAttribute('href', url)
-      
+
       const dateRange = formatDateRange()
       const filename = `sensor_data_${espId.value}_${dateRange.replace(/\s+/g, '_')}.csv`
       link.setAttribute('download', filename)
-      
+
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
     }
-    
+
     // Utility functions
     const formatEnergy = (energy) => {
       return energy.toFixed(3)
     }
-    
+
     const formatDateRange = () => {
       if (!startDate.value || !endDate.value) return ''
       const start = startDate.value.toLocaleDateString()
       const end = endDate.value.toLocaleDateString()
       return `${start} - ${end}`
     }
-    
+
     // Comprehensive chart functions
     const setComprehensiveChartType = (type) => {
       comprehensiveChartType.value = type
@@ -1661,21 +1647,21 @@ export default {
         createComprehensiveUPlotChart()
       }
     }
-    
+
     // Dropdown change handlers
     const onPresetChange = (event) => {
       setDatePreset(event.value)
     }
-    
+
     const onChartTypeChange = (event) => {
       setComprehensiveChartType(event.value)
     }
-    
+
     const createComprehensiveUPlotChart = () => {
       if (!comprehensiveUplotContainer.value || !historicalData.value.length) {
         return
       }
-      
+
       // Ensure container has proper dimensions
       const initRect = comprehensiveUplotContainer.value.getBoundingClientRect()
       if (initRect.width === 0 || initRect.height === 0) {
@@ -1684,7 +1670,7 @@ export default {
         }, 50)
         return
       }
-      
+
       // Destroy existing chart
       if (comprehensiveUplotChart.value) {
         try {
@@ -1694,7 +1680,7 @@ export default {
         }
         comprehensiveUplotChart.value = null
       }
-      
+
       // Prepare data based on chart type
       const timestamps = []
       const seriesData = []
@@ -1706,23 +1692,23 @@ export default {
         incrs: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400, 604800],
         values: (u, vals) => {
           if (!vals || vals.length === 0) return []
-          
+
           const minTime = Math.min(...vals)
           const maxTime = Math.max(...vals)
           const timeSpanHours = (maxTime - minTime) / 3600
-          
+
           return vals.map(v => {
             const date = new Date(v * 1000)
-            
+
             if (timeSpanHours <= 24) {
-              return date.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
+              return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
                 minute: '2-digit',
-                hour12: false 
+                hour12: false
               })
             } else if (timeSpanHours <= 168) {
-              return date.toLocaleDateString('en-US', { 
-                month: 'short', 
+              return date.toLocaleDateString('en-US', {
+                month: 'short',
                 day: 'numeric'
               }) + '\n' + date.toLocaleTimeString('en-US', {
                 hour: '2-digit',
@@ -1730,8 +1716,8 @@ export default {
                 hour12: false
               })
             } else {
-              return date.toLocaleDateString('en-US', { 
-                month: 'short', 
+              return date.toLocaleDateString('en-US', {
+                month: 'short',
                 day: 'numeric',
                 year: '2-digit'
               })
@@ -1739,15 +1725,15 @@ export default {
           })
         }
       }]
-      
+
       // Sort historical data by time
       const sortedData = [...historicalData.value].sort((a, b) => new Date(a.time) - new Date(b.time))
-      
+
       // Prepare timestamps
       sortedData.forEach(record => {
         timestamps.push(new Date(record.time).getTime() / 1000)
       })
-      
+
       // Configure series based on chart type
       if (comprehensiveChartType.value === 'voltage') {
         const vaData = [], vbData = [], vcData = []
@@ -1765,7 +1751,7 @@ export default {
         )
         scales.voltage = { auto: true }
         axes.push({ scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } })
-        
+
       } else if (comprehensiveChartType.value === 'current') {
         const iaData = [], ibData = [], icData = []
         sortedData.forEach(record => {
@@ -1782,7 +1768,7 @@ export default {
         )
         scales.current = { auto: true }
         axes.push({ scale: 'current', label: 'Current (A)', labelGap: 8, side: 3, grid: { show: true } })
-        
+
       } else if (comprehensiveChartType.value === 'power') {
         const paData = [], pbData = [], pcData = [], totalPowerData = []
         sortedData.forEach(record => {
@@ -1804,7 +1790,7 @@ export default {
         )
         scales.power = { auto: true }
         axes.push({ scale: 'power', label: 'Power (W)', labelGap: 8, side: 3, grid: { show: true } })
-        
+
       } else if (comprehensiveChartType.value === 'powerfactor') {
         const pfaData = [], pfbData = [], pfcData = []
         sortedData.forEach(record => {
@@ -1821,7 +1807,7 @@ export default {
         )
         scales.pf = { auto: true, range: [0, 1] }
         axes.push({ scale: 'pf', label: 'Power Factor', labelGap: 8, side: 3, grid: { show: true } })
-        
+
       } else if (comprehensiveChartType.value === 'energy') {
         const ettData = []
         sortedData.forEach(record => {
@@ -1834,14 +1820,14 @@ export default {
         )
         scales.energy = { auto: true }
         axes.push({ scale: 'energy', label: 'Energy (kWh)', labelGap: 8, side: 3, grid: { show: true } })
-        
+
       } else if (comprehensiveChartType.value === 'all') {
         const vaData = [], vbData = [], vcData = []
         const iaData = [], ibData = [], icData = []
         const paData = [], pbData = [], pcData = []
         const pfaData = [], pfbData = [], pfcData = []
         const ettData = []
-        
+
         sortedData.forEach(record => {
           // Voltage data
           vaData.push(parseFloat(record.Va) || 0)
@@ -1862,7 +1848,7 @@ export default {
           // Energy Total
           ettData.push(parseFloat(record.Ett) || 0)
         })
-        
+
         seriesData.push(timestamps, vaData, vbData, vcData, iaData, ibData, icData, paData, pbData, pcData, pfaData, pfbData, pfcData, ettData)
         seriesConfig.push(
           {},
@@ -1885,13 +1871,13 @@ export default {
           // Energy Total
           { label: 'Ett (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
         )
-        
+
         scales.voltage = { auto: true }
         scales.current = { auto: true }
         scales.power = { auto: true }
         scales.pf = { auto: true, range: [0, 1] }
         scales.energy = { auto: true }
-        
+
         axes.push(
           { scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } },
           { scale: 'current', label: 'Current (A)', labelGap: 8, side: 1, grid: { show: false } },
@@ -1900,12 +1886,12 @@ export default {
           { scale: 'energy', label: 'Energy (kWh)', labelGap: 8, side: 3, grid: { show: false } }
         )
       }
-      
+
       // Get container dimensions
       const chartRect = comprehensiveUplotContainer.value.getBoundingClientRect()
       const containerWidth = Math.max(chartRect.width, 400)
       const containerHeight = 400
-      
+
       const opts = {
         title: `Comprehensive Sensor Data - ${comprehensiveChartType.value.charAt(0).toUpperCase() + comprehensiveChartType.value.slice(1)}`,
         width: containerWidth,
@@ -1914,7 +1900,7 @@ export default {
         axes: axes,
         scales: scales
       }
-      
+
       try {
         comprehensiveUplotChart.value = new uPlot(opts, seriesData, comprehensiveUplotContainer.value)
         console.log('Comprehensive uPlot chart created successfully')
@@ -1923,7 +1909,7 @@ export default {
         comprehensiveUplotChart.value = null
       }
     }
-    
+
     // Cleanup uPlot charts on unmount
     onUnmounted(() => {
       if (uplotChart.value) {
@@ -1933,7 +1919,7 @@ export default {
         comprehensiveUplotChart.value.destroy()
       }
     })
-    
+
     return {
       sensorData,
       historicalData,
@@ -1942,6 +1928,7 @@ export default {
       todayPowerData,
       powerChartCanvas,
       isConnected,
+      isUsingFallbackData,
       emissionFactor,
       totalPower,
       totalCO2,
@@ -2080,7 +2067,9 @@ export default {
   min-width: 200px;
 }
 
-.edit-btn, .save-btn, .cancel-btn {
+.edit-btn,
+.save-btn,
+.cancel-btn {
   padding: 4px 8px !important;
   min-width: auto !important;
 }
@@ -2124,30 +2113,30 @@ export default {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .header-center {
     order: 2;
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .header-right {
     order: 1;
     align-self: flex-end;
   }
-  
+
   .device-info-section {
     width: 100%;
   }
-  
+
   .device-name-input {
     min-width: 150px;
   }
-  
+
   .user-email {
     display: none;
   }
-  
+
   .account-section {
     padding: 6px 8px;
   }
@@ -2180,7 +2169,7 @@ export default {
 
 .data-card {
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .voltage-card {
@@ -2250,13 +2239,15 @@ export default {
   border-left: 4px solid #F44336;
 }
 
-.energy-data, .co2-data {
+.energy-data,
+.co2-data {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.energy-item, .co2-item {
+.energy-item,
+.co2-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2264,11 +2255,13 @@ export default {
   border-bottom: 1px solid #eee;
 }
 
-.energy-item:last-child, .co2-item:last-child {
+.energy-item:last-child,
+.co2-item:last-child {
   border-bottom: none;
 }
 
-.energy-label, .co2-label {
+.energy-label,
+.co2-label {
   font-weight: 500;
   color: #666;
 }
@@ -2365,7 +2358,7 @@ export default {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .energy-details {
     width: 100%;
   }
@@ -2518,15 +2511,15 @@ export default {
   .power-phases-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .phase-card {
     padding: 16px;
   }
-  
+
   .phase-value .value {
     font-size: 24px;
   }
-  
+
   .phase-value.total .value {
     font-size: 28px;
   }
@@ -2575,13 +2568,14 @@ export default {
   .power-chart-container {
     height: 300px;
   }
-  
+
   .power-chart-section {
     padding: 16px;
   }
 }
 
-.energy-value, .co2-value {
+.energy-value,
+.co2-value {
   font-weight: 600;
   color: #2c3e50;
   font-size: 1.1rem;
@@ -2596,7 +2590,7 @@ export default {
 .chart-card {
   margin-bottom: 30px;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #673AB7;
 }
 
@@ -2616,7 +2610,7 @@ export default {
 
 .historical-data-card {
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .overview-content {
@@ -2799,8 +2793,15 @@ export default {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .history-results {
@@ -2813,6 +2814,7 @@ export default {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2968,9 +2970,22 @@ export default {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-10px); }
-  60% { transform: translateY(-5px); }
+
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-10px);
+  }
+
+  60% {
+    transform: translateY(-5px);
+  }
 }
 
 .no-data-content h3 {
@@ -2992,6 +3007,7 @@ export default {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -3003,100 +3019,100 @@ export default {
   .dashboard-container {
     padding: 10px;
   }
-  
+
   .data-cards-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .energy-co2-section {
     grid-template-columns: 1fr;
   }
-  
+
   .dashboard-header h1 {
     font-size: 2rem;
   }
-  
+
   /* History tab mobile optimizations */
   .history-content {
     padding: 16px;
   }
-  
+
   .history-controls {
     padding: 20px;
     margin-bottom: 24px;
   }
-  
+
   .date-range-section h3 {
     font-size: 1.2rem;
     text-align: center;
   }
-  
+
   .preset-dropdown {
     padding: 12px;
   }
-  
+
   .preset-selector {
     min-width: 100%;
   }
-  
+
   .chart-type-dropdown {
     padding: 12px;
   }
-  
+
   .chart-type-selector {
     min-width: 100%;
   }
-  
+
   .date-pickers {
     padding: 16px;
   }
-  
+
   .date-picker-group {
     min-width: 100%;
     max-width: 100%;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .action-buttons .p-button {
     width: 100%;
     justify-content: center;
   }
-  
+
   .summary-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .summary-item {
     padding: 12px 16px;
   }
-  
+
   .summary-label {
     font-size: 0.9rem;
   }
-  
+
   .summary-value {
     font-size: 1.1rem;
   }
-  
+
   .uplot-container {
     height: 300px;
   }
-  
+
   .data-summary .p-card-title,
   .chart-section .p-card-title {
     font-size: 1.1rem;
     padding: 16px 20px;
   }
-  
+
   .loading-section {
     padding: 40px 16px;
   }
-  
+
   .no-data-content {
     padding: 40px 16px;
   }
@@ -3106,30 +3122,30 @@ export default {
   .history-content {
     padding: 12px;
   }
-  
+
   .history-controls {
     padding: 16px;
   }
-  
+
   .date-range-section h3 {
     font-size: 1.1rem;
   }
-  
+
   .preset-selector,
   .chart-type-selector {
     font-size: 0.9rem;
   }
-  
+
   .summary-item {
     flex-direction: column;
     text-align: center;
     gap: 8px;
   }
-  
+
   .summary-value {
     text-align: center;
   }
-  
+
   .uplot-container {
     height: 250px;
   }
