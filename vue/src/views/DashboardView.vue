@@ -1145,13 +1145,40 @@ export default {
     // Handle window resize for chart responsiveness
     const handleResize = () => {
       if (uplotChart.value && uplotContainer.value) {
-        const newWidth = uplotContainer.value.clientWidth || 800
-        uplotChart.value.setSize({ width: newWidth, height: 400 })
+        const resizeRect = uplotContainer.value.getBoundingClientRect()
+        const newWidth = Math.max(resizeRect.width, 400) // Minimum width of 400px
+        const newHeight = 400
+        
+        try {
+          uplotChart.value.setSize({ width: newWidth, height: newHeight })
+        } catch (error) {
+          console.warn('Error resizing uPlot chart:', error)
+        }
+      }
+    }
+    
+    // ResizeObserver for better container size detection
+    const resizeObserver = ref(null)
+    
+    const setupResizeObserver = () => {
+      if (uplotContainer.value && window.ResizeObserver) {
+        resizeObserver.value = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            if (entry.target === uplotContainer.value) {
+              handleResize()
+            }
+          }
+        })
+        resizeObserver.value.observe(uplotContainer.value)
       }
     }
     
     onUnmounted(() => {
       window.removeEventListener('resize', handleResize)
+      if (resizeObserver.value) {
+        resizeObserver.value.disconnect()
+        resizeObserver.value = null
+      }
       disconnectMQTT()
       // Cleanup chart with proper error handling
       if (powerChart.value) {
@@ -1290,6 +1317,8 @@ export default {
           // Add small delay to ensure container is fully rendered
           setTimeout(() => {
             createUPlotChart()
+            // Setup resize observer after chart is created
+            setupResizeObserver()
           }, 100)
         }
         
@@ -1312,6 +1341,16 @@ export default {
         return
       }
       
+      // Ensure container has proper dimensions before creating chart
+      const initRect = uplotContainer.value.getBoundingClientRect()
+      if (initRect.width === 0 || initRect.height === 0) {
+        // Container not properly sized yet, retry after a short delay
+        setTimeout(() => {
+          createUPlotChart()
+        }, 50)
+        return
+      }
+      
       // Destroy existing chart
       if (uplotChart.value) {
         try {
@@ -1322,38 +1361,56 @@ export default {
         uplotChart.value = null
       }
       
-      // Prepare data for uPlot
+      // Prepare data for uPlot - 4 series: power, CO2 from power, energy, cumulative CO2 from energy
       const timestamps = []
       const powerData = []
-      const co2Data = []
+      const co2FromPowerData = []
+      const energyData = []
+      const cumulativeCO2FromEnergyData = []
       
       // Sort historical data by time to ensure proper ordering
       const sortedData = [...historicalData.value].sort((a, b) => new Date(a.time) - new Date(b.time))
       
-      sortedData.forEach(record => {
+      let cumulativeCO2 = 0
+      const baseEnergy = sortedData.length > 0 ? (parseFloat(sortedData[0].Ett) || 0) : 0
+      
+      sortedData.forEach((record, index) => {
         const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
-        // Convert power values to numbers to prevent NaN
+        
+        // 1. Total Power (W)
         const Pa = parseFloat(record.Pa) || 0
         const Pb = parseFloat(record.Pb) || 0
         const Pc = parseFloat(record.Pc) || 0
         const totalPower = Pa + Pb + Pc
-        // Convert Ett to number to ensure proper type for CO2 calculation
+        
+        // 2. CO2 from Power (instantaneous calculation)
+        // Convert power to energy (assuming 1-hour intervals for approximation)
+        const powerInKW = totalPower / 1000
+        const co2FromPower = calculateCO2Emissions(powerInKW, emissionFactor.value)
+        
+        // 3. Total Energy (kWh)
         const energyValue = parseFloat(record.Ett) || 0
-        const co2 = calculateCO2Emissions(energyValue, emissionFactor.value)
+        const totalEnergy = energyValue - baseEnergy
+        
+        // 4. Cumulative CO2 from Energy (kg)
+        cumulativeCO2 = calculateCO2Emissions(totalEnergy, emissionFactor.value)
         
         timestamps.push(timestamp)
         powerData.push(totalPower)
-        co2Data.push(co2)
+        co2FromPowerData.push(co2FromPower)
+        energyData.push(totalEnergy)
+        cumulativeCO2FromEnergyData.push(cumulativeCO2)
       })
       
-      const data = [timestamps, powerData, co2Data]
+      const data = [timestamps, powerData, co2FromPowerData, energyData, cumulativeCO2FromEnergyData]
       
-      // Ensure container has proper dimensions
-      const containerWidth = uplotContainer.value.clientWidth || 800
+      // Get actual container dimensions
+      const chartRect = uplotContainer.value.getBoundingClientRect()
+      const containerWidth = Math.max(chartRect.width, 400) // Minimum width of 400px
       const containerHeight = 400
       
       const opts = {
-        title: 'Power Consumption & CO2 Emissions Over Time',
+        title: 'Power, Energy & CO2 Emissions Over Time',
         width: containerWidth,
         height: containerHeight,
         series: [
@@ -1365,10 +1422,22 @@ export default {
             scale: 'power'
           },
           {
-            label: 'CO2 Emissions (kg)',
+            label: 'CO2 from Power (kg)',
             stroke: '#e74c3c',
             width: 2,
-            scale: 'co2'
+            scale: 'co2Power'
+          },
+          {
+            label: 'Total Energy (kWh)',
+            stroke: '#2ecc71',
+            width: 2,
+            scale: 'energy'
+          },
+          {
+            label: 'Cumulative CO2 from Energy (kg)',
+            stroke: '#f39c12',
+            width: 2,
+            scale: 'co2Energy'
           }
         ],
         axes: [
@@ -1423,8 +1492,22 @@ export default {
             grid: { show: true }
           },
           {
-            scale: 'co2',
-            label: 'CO2 (kg)',
+            scale: 'co2Power',
+            label: 'CO2 from Power (kg)',
+            labelGap: 8,
+            side: 1,
+            grid: { show: false }
+          },
+          {
+            scale: 'energy',
+            label: 'Energy (kWh)',
+            labelGap: 8,
+            side: 3,
+            grid: { show: false }
+          },
+          {
+            scale: 'co2Energy',
+            label: 'Cumulative CO2 (kg)',
             labelGap: 8,
             side: 1,
             grid: { show: false }
@@ -1438,7 +1521,13 @@ export default {
           power: {
             auto: true
           },
-          co2: {
+          co2Power: {
+            auto: true
+          },
+          energy: {
+            auto: true
+          },
+          co2Energy: {
             auto: true
           }
         }
@@ -1446,6 +1535,7 @@ export default {
       
       try {
         uplotChart.value = new uPlot(opts, data, uplotContainer.value)
+        console.log('uPlot chart created successfully with dimensions:', containerWidth, 'x', containerHeight)
       } catch (error) {
         console.error('Error creating uPlot chart:', error)
         uplotChart.value = null
