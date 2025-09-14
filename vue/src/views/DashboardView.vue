@@ -95,9 +95,10 @@
                   <span class="phase-label">Phase A</span>
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
-                <div class="phase-value">
-                  <span class="value">{{ sensorData.Pa.toFixed(2) }}</span>
-                  <span class="unit">W</span>
+                <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
+                  <Knob v-model="sensorData.Pa" :readonly="true" :size="150" :min="0" :max="10000" 
+                        :strokeWidth="8" valueColor="#3498db" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+
                 </div>
                 <div class="phase-details">
                   <div class="detail">
@@ -120,9 +121,10 @@
                   <span class="phase-label">Phase B</span>
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
-                <div class="phase-value">
-                  <span class="value">{{ sensorData.Pb.toFixed(2) }}</span>
-                  <span class="unit">W</span>
+                <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
+                  <Knob v-model="sensorData.Pb" :readonly="true" :size="150" :min="0" :max="10000" 
+                        :strokeWidth="8" valueColor="#e74c3c" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+
                 </div>
                 <div class="phase-details">
                   <div class="detail">
@@ -145,10 +147,11 @@
                   <span class="phase-label">Phase C</span>
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
-                <div class="phase-value">
-                  <span class="value">{{ sensorData.Pc.toFixed(2) }}</span>
-                  <span class="unit">W</span>
+                <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
+                  <Knob v-model="sensorData.Pc" :readonly="true" :size="150" :min="0" :max="10000" 
+                        :strokeWidth="8" valueColor="#f39c12" rangeColor="#ecf0f1" valueTemplate="{value} W" />
                 </div>
+
                 <div class="phase-details">
                   <div class="detail">
                     <span class="label">Voltage:</span>
@@ -364,6 +367,7 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import Dropdown from 'primevue/dropdown'
+import Knob from 'primevue/knob'
 import uPlot from 'uplot'
 import 'uplot/dist/uPlot.min.css'
 import DataCard from '@/components/DataCard.vue'
@@ -398,7 +402,8 @@ export default {
     CO2Card,
     DailyEnergyChart,
     MonthlyEnergyChart,
-    Dropdown
+    Dropdown,
+    Knob
   },
   setup() {
     const route = useRoute()
@@ -830,16 +835,22 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-
+console.log("res",response.data);
         if (response.data && Array.isArray(response.data)) {
           todayPowerData.value = response.data.map(item => ({
             time: item.time,
             Va: parseFloat(item.Va || 0),
             Vb: parseFloat(item.Vb || 0),
             Vc: parseFloat(item.Vc || 0),
+            Ia: parseFloat(item.Ia || 0),
+            Ib: parseFloat(item.Ib || 0),
+            Ic: parseFloat(item.Ic || 0),
             Pa: parseFloat(item.Pa || 0),
             Pb: parseFloat(item.Pb || 0),
             Pc: parseFloat(item.Pc || 0),
+            PFa: parseFloat(item.PFa || 0),
+            PFb: parseFloat(item.PFb || 0),
+            PFc: parseFloat(item.PFc || 0),
             totalPower: parseFloat(item.totalPower || 0)
           }))
           console.log('Fetched today\'s power data:', todayPowerData.value.length, 'records')
@@ -1140,24 +1151,22 @@ export default {
         // Set fallback data flag and last update time
         isUsingFallbackData.value = true
         lastUpdateTime.value = new Date(lastRecord.time)
-
+console.log(sensorData);
         // Update sensorData with last known power and voltage values
         sensorData.value = {
           ...sensorData.value,
           Pa: lastRecord.Pa || 0,
           Pb: lastRecord.Pb || 0,
           Pc: lastRecord.Pc || 0,
-          // Use real voltage data from database
           Va: lastRecord.Va || 0,
           Vb: lastRecord.Vb || 0,
           Vc: lastRecord.Vc || 0,
-          // Calculate current using real voltage data (I = P / V)
-          Ia: lastRecord.Va > 0 ? (lastRecord.Pa / lastRecord.Va) : 0,
-          Ib: lastRecord.Vb > 0 ? (lastRecord.Pb / lastRecord.Vb) : 0,
-          Ic: lastRecord.Vc > 0 ? (lastRecord.Pc / lastRecord.Vc) : 0,
-          PFa: sensorData.value.PFa || 0.85,
-          PFb: sensorData.value.PFb || 0.85,
-          PFc: sensorData.value.PFc || 0.85,
+          Ia: lastRecord.Ia || 0,
+          Ib: lastRecord.Ib || 0,
+          Ic: lastRecord.Ic || 0,
+          PFa: lastRecord.PFa || 0.85,
+          PFb: lastRecord.PFb || 0.85,
+          PFc: lastRecord.PFc || 0.85,
           Ett: todayEnergyData.value.endEnergy || 0
         }
       }
@@ -2347,6 +2356,27 @@ export default {
   font-weight: 600;
   color: #2c3e50;
   font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.knob-label {
+  text-align: center;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.knob-label .value {
+  font-size: 1.2rem;
+  display: block;
+}
+
+.knob-label .unit {
+  font-size: 0.9rem;
+  color: #666;
+  margin-left: 4px;
 }
 
 .total-power {

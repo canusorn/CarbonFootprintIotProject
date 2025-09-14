@@ -485,9 +485,15 @@ class SensorService {
           Va,
           Vb,
           Vc,
+          Ia,
+          Ib,
+          Ic,
           Pa,
           Pb,
           Pc,
+          PFa,
+          PFb,
+          PFc,
           (Pa + Pb + Pc) as total_power
         FROM \`${tableName}\`
         WHERE DATE(time) = CURDATE()
@@ -505,9 +511,15 @@ class SensorService {
         Va: parseFloat(row.Va) || 0,
         Vb: parseFloat(row.Vb) || 0,
         Vc: parseFloat(row.Vc) || 0,
+        Ia: parseFloat(row.Ia) || 0,
+        Ib: parseFloat(row.Ib) || 0,
+        Ic: parseFloat(row.Ic) || 0,
         Pa: parseFloat(row.Pa) || 0,
         Pb: parseFloat(row.Pb) || 0,
         Pc: parseFloat(row.Pc) || 0,
+        PFa: parseFloat(row.PFa) || 0,
+        PFb: parseFloat(row.PFb) || 0,
+        PFc: parseFloat(row.PFc) || 0,
         totalPower: parseFloat(row.total_power) || 0
       }));
       
