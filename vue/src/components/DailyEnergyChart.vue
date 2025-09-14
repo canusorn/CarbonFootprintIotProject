@@ -155,29 +155,46 @@ export default {
     }
     // Chart data computation
     const chartData = computed(() => {
-      if (!props.dailyEnergyData.length) {
-        return {
-          labels: [],
-          datasets: []
-        }
+      // Generate complete month dates starting from first day
+      const [year, month] = selectedMonth.value.split('-')
+      const daysInMonth = new Date(year, month, 0).getDate()
+      const completeMonthDates = []
+      const completeEnergyData = []
+      const completeCO2Data = []
+      
+      // Create data map for quick lookup
+      const dataMap = {}
+      props.dailyEnergyData.forEach(item => {
+        dataMap[item.date] = item
+      })
+      
+      // Generate all dates for the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${month.padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+        completeMonthDates.push(dateStr)
+        
+        // Use actual data if available, otherwise use 0
+        const dayData = dataMap[dateStr]
+        completeEnergyData.push(dayData ? dayData.energy : 0)
+        completeCO2Data.push(dayData ? dayData.co2 : 0)
       }
 
       return {
-        labels: props.dailyEnergyData.map(item => item.date),
+        labels: completeMonthDates,
         datasets: [
           {
             label: 'Energy Consumption (kWh)',
             backgroundColor: '#42A5F5',
             borderColor: '#1E88E5',
             borderWidth: 1,
-            data: props.dailyEnergyData.map(item => item.energy)
+            data: completeEnergyData
           },
           {
             label: 'CO2 Emissions (kg)',
             backgroundColor: '#FF7043',
             borderColor: '#F4511E',
             borderWidth: 1,
-            data: props.dailyEnergyData.map(item => item.co2)
+            data: completeCO2Data
           }
         ]
       }
@@ -228,10 +245,15 @@ export default {
               text: 'Date'
             },
             ticks: {
-              maxTicksLimit: 10,
+              maxTicksLimit: 15,
               callback: function (value, index) {
                 const date = new Date(this.getLabelForValue(value))
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                const day = date.getDate()
+                // Show every 5th day or 1st day of month
+                if (day === 1 || day % 5 === 0) {
+                  return day.toString()
+                }
+                return ''
               }
             }
           }
