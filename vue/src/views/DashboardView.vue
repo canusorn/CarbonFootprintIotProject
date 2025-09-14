@@ -207,19 +207,26 @@
             </div>
           </div>
 
-          <!-- Daily Energy Chart -->
-          <DailyEnergyChart 
-            :daily-energy-data="dailyEnergyData" 
-            :emission-factor="emissionFactor" 
-            @month-changed="handleMonthChange"
-          />
-          
-          <!-- Monthly Energy Chart -->
-          <MonthlyEnergyChart 
-            :monthly-energy-data="monthlyEnergyData" 
-            :emission-factor="emissionFactor" 
-            @year-changed="handleYearChange"
-          />
+          <!-- Energy Charts Container -->
+          <div class="energy-charts-container">
+            <!-- Daily Energy Chart -->
+            <div class="chart-column">
+              <DailyEnergyChart 
+                :daily-energy-data="dailyEnergyData" 
+                :emission-factor="emissionFactor" 
+                @month-changed="handleMonthChange"
+              />
+            </div>
+            
+            <!-- Monthly Energy Chart -->
+            <div class="chart-column">
+              <MonthlyEnergyChart 
+                :monthly-energy-data="monthlyEnergyData" 
+                :emission-factor="emissionFactor" 
+                @year-changed="handleYearChange"
+              />
+            </div>
+          </div>
         </div>
       </TabPanel>
 
@@ -3325,5 +3332,67 @@ export default {
 
 .last-update-time span {
   font-weight: 500;
+}
+
+/* Energy Charts Container - Responsive Layout */
+.energy-charts-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  margin-top: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Tablet layout - still single column but larger gap */
+@media (min-width: 768px) {
+  .energy-charts-container {
+    gap: 20px;
+  }
+}
+
+/* Desktop layout - 2 columns */
+@media (min-width: 1024px) {
+  .energy-charts-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+  }
+}
+
+/* Large desktop - more spacing */
+@media (min-width: 1440px) {
+  .energy-charts-container {
+    gap: 30px;
+  }
+}
+
+.chart-column {
+  width: 100%;
+  min-width: 0; /* Prevents grid overflow */
+  box-sizing: border-box;
+}
+
+/* Ensure all chart elements are responsive */
+.chart-column :deep(.energy-chart) {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.chart-column :deep(.chart-container) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.chart-column :deep(.chart-section) {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Responsive canvas elements */
+.chart-column :deep(canvas) {
+  max-width: 100%;
+  height: auto !important;
 }
 </style>
