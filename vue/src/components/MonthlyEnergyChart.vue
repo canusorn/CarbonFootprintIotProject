@@ -1,10 +1,8 @@
 <template>
   <div class="energy-chart">
-
-
     <!-- Chart Section -->
     <div class="chart-section">
-      <h4>Daily Energy Consumption & CO2 Emissions Last 30 Days</h4>
+      <h4>Monthly Energy Consumption & CO2 Emissions - Year View</h4>
       <!-- Summary Cards -->
       <div class="summary-row">
         <div class="summary-item">
@@ -14,7 +12,7 @@
         <div class="pie-chart-container">
           <h5>Total Energy vs CO2 Emissions</h5>
           <div class="pie-chart">
-            <Pie v-if="dailyEnergyData.length > 0" :data="pieChartData" :options="pieChartOptions" />
+            <Pie v-if="monthlyEnergyData.length > 0" :data="pieChartData" :options="pieChartOptions" />
             <div v-else class="no-data-message">
               <p>No data for pie chart</p>
             </div>
@@ -26,9 +24,9 @@
         </div>
       </div>
       <div class="chart-container">
-        <Bar v-if="dailyEnergyData.length > 0" :data="chartData" :options="chartOptions" />
+        <Bar v-if="monthlyEnergyData.length > 0" :data="chartData" :options="chartOptions" />
         <div v-else class="no-data-message">
-          <p>No historical data available for chart display.</p>
+          <p>No monthly data available for chart display.</p>
         </div>
       </div>
     </div>
@@ -63,14 +61,14 @@ ChartJS.register(
 )
 
 export default {
-  name: 'DailyEnergyChart',
+  name: 'MonthlyEnergyChart',
   components: {
     Card,
     Bar,
     Pie
   },
   props: {
-    dailyEnergyData: {
+    monthlyEnergyData: {
       type: Array,
       default: () => []
     },
@@ -82,18 +80,19 @@ export default {
   setup(props) {
     // Calculate totals
     const totalEnergy = computed(() => {
-      return props.dailyEnergyData.reduce((sum, item) => sum + (item.energy || 0), 0)
+      return props.monthlyEnergyData.reduce((sum, item) => sum + (item.energy || 0), 0)
     })
 
     const totalCO2 = computed(() => {
-      return props.dailyEnergyData.reduce((sum, item) => {
+      return props.monthlyEnergyData.reduce((sum, item) => {
         const co2 = item.co2 || calculateCO2Emissions(item.energy || 0, props.emissionFactor)
         return sum + co2
       }, 0)
     })
+
     // Chart data computation
     const chartData = computed(() => {
-      if (!props.dailyEnergyData.length) {
+      if (!props.monthlyEnergyData.length) {
         return {
           labels: [],
           datasets: []
@@ -101,21 +100,21 @@ export default {
       }
 
       return {
-        labels: props.dailyEnergyData.map(item => item.date),
+        labels: props.monthlyEnergyData.map(item => item.month),
         datasets: [
           {
             label: 'Energy Consumption (kWh)',
             backgroundColor: '#42A5F5',
             borderColor: '#1E88E5',
             borderWidth: 1,
-            data: props.dailyEnergyData.map(item => item.energy)
+            data: props.monthlyEnergyData.map(item => item.energy)
           },
           {
             label: 'CO2 Emissions (kg)',
             backgroundColor: '#FF7043',
             borderColor: '#F4511E',
             borderWidth: 1,
-            data: props.dailyEnergyData.map(item => item.co2)
+            data: props.monthlyEnergyData.map(item => item.co2)
           }
         ]
       }
@@ -128,7 +127,7 @@ export default {
         plugins: {
           title: {
             // display: true,
-            // text: 'Daily Energy Consumption & CO2 Emissions (Last 30 Days)'
+            // text: 'Monthly Energy Consumption & CO2 Emissions (Year View)'
           },
           legend: {
             display: true,
@@ -163,13 +162,12 @@ export default {
           x: {
             title: {
               display: true,
-              text: 'Date'
+              text: 'Month'
             },
             ticks: {
-              maxTicksLimit: 10,
+              maxTicksLimit: 12,
               callback: function (value, index) {
-                const date = new Date(this.getLabelForValue(value))
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                return this.getLabelForValue(value)
               }
             }
           }
@@ -184,7 +182,7 @@ export default {
 
     // Pie chart data for Total Energy vs Total CO2 Emissions
     const pieChartData = computed(() => {
-      if (!props.dailyEnergyData.length) {
+      if (!props.monthlyEnergyData.length) {
         return {
           labels: [],
           datasets: []

@@ -239,6 +239,38 @@ const createDeviceRoutes = (deviceService, sensorService) => {
         console.error('Error retrieving today power data:', error.message);
         res.status(500).json({ error: 'Failed to retrieve today power data' });
       }
+    },
+
+    // Get monthly energy data
+    getMonthlyEnergyData: async (req, res) => {
+      try {
+        const { espId } = req.params;
+        const { year } = req.query;
+        
+        if (!espId) {
+          return res.status(400).json({ error: 'ESP ID is required' });
+        }
+        
+        // Validate year parameter if provided
+        let yearInt = null;
+        if (year) {
+          yearInt = parseInt(year);
+          if (isNaN(yearInt) || yearInt < 2020 || yearInt > 2030) {
+            return res.status(400).json({ error: 'Year parameter must be between 2020 and 2030' });
+          }
+        }
+        
+        // Check if sensor service is available
+        if (!sensorService) {
+          return res.status(503).json({ error: 'Sensor service not available. Please check database connection.' });
+        }
+        
+        const data = await sensorService.getMonthlyEnergyData(espId, yearInt);
+        res.json(data);
+      } catch (error) {
+        console.error('Error retrieving monthly energy data:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve monthly energy data' });
+      }
     }
   };
 };

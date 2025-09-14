@@ -205,6 +205,9 @@
 
           <!-- Daily Energy Chart -->
           <DailyEnergyChart :daily-energy-data="dailyEnergyData" :emission-factor="emissionFactor" />
+          
+          <!-- Monthly Energy Chart -->
+          <MonthlyEnergyChart :monthly-energy-data="monthlyEnergyData" :emission-factor="emissionFactor" />
         </div>
       </TabPanel>
 
@@ -348,6 +351,7 @@ import DataCard from '@/components/DataCard.vue'
 import EnergyCard from '@/components/EnergyCard.vue'
 import CO2Card from '@/components/CO2Card.vue'
 import DailyEnergyChart from '@/components/DailyEnergyChart.vue'
+import MonthlyEnergyChart from '@/components/MonthlyEnergyChart.vue'
 import {
   calculateCO2Emissions,
   calculateThreePhaseCO2,
@@ -373,7 +377,8 @@ export default {
     DataCard,
     EnergyCard,
     CO2Card,
-    DailyEnergyChart, 
+    DailyEnergyChart,
+    MonthlyEnergyChart,
     Dropdown
   },
   setup() {
@@ -389,6 +394,7 @@ export default {
 
     const historicalData = ref([])
     const dailyEnergyData = ref([])
+    const monthlyEnergyData = ref([])
     const todayEnergyData = ref({
       todayEnergy: 0,
       startEnergy: 0,
@@ -767,6 +773,31 @@ export default {
       }
     }
 
+    // Fetch monthly energy data from backend
+    const fetchMonthlyEnergyData = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`http://localhost:3000/api/monthly-energy/${espId.value}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.data && Array.isArray(response.data)) {
+          monthlyEnergyData.value = response.data.map(item => ({
+            month: item.month,
+            energy: parseFloat(item.energy || 0),
+            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            recordCount: parseInt(item.recordCount || 0)
+          }))
+          console.log('Fetched monthly energy data:', monthlyEnergyData.value.length, 'records')
+        }
+      } catch (error) {
+        console.error('Error fetching monthly energy data:', error)
+        monthlyEnergyData.value = []
+      }
+    }
+
     // Fetch today's power data from backend
     const fetchTodayPowerData = async () => {
       try {
@@ -1120,6 +1151,7 @@ export default {
       fetchHistoricalData()
       fetchTodayEnergyData()
       fetchDailyEnergyData()
+      fetchMonthlyEnergyData()
       await fetchTodayPowerData()
 
       populateWithLastData();
@@ -1937,6 +1969,7 @@ export default {
       sensorData,
       historicalData,
       dailyEnergyData,
+      monthlyEnergyData,
       todayEnergyData,
       todayPowerData,
       powerChartCanvas,

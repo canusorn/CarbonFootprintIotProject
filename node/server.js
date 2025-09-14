@@ -331,6 +331,14 @@ app.get('/api/today-power/:espId', auth, async (req, res) => {
   res.status(503).json({ error: 'Today power service not available' });
 });
 
+// Get monthly energy data by ESP ID
+app.get('/api/monthly-energy/:espId', auth, async (req, res) => {
+  if (deviceRoutes && deviceRoutes.getMonthlyEnergyData) {
+    return deviceRoutes.getMonthlyEnergyData(req, res);
+  }
+  res.status(503).json({ error: 'Monthly energy service not available' });
+});
+
 // Initialize database and start servers
 // Function to initialize services
 const initializeServices = async () => {

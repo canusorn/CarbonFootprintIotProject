@@ -469,6 +469,90 @@ class SensorService {
     }
   }
 
+  async getMonthlyEnergyData(espId, year = null) {
+    const startTime = Date.now();
+    
+    if (!this.connection) {
+      throw new Error('Database connection not initialized');
+    }
+
+    const tableName = `${espId}`;
+    const currentYear = year || new Date().getFullYear();
+    
+    try {
+      console.log(`🔄 Calculating monthly energy data for ESP: ${espId} (year ${currentYear})`);
+      
+      // SQL query to calculate monthly energy consumption for the specified year
+      const query = `
+        SELECT 
+          mr.month,
+          mr.month_name,
+          COALESCE(md.monthly_energy, 0) as monthly_energy,
+          COALESCE(md.record_count, 0) as record_count
+        FROM (
+          SELECT 
+            1 as month, 'Jan' as month_name UNION
+          SELECT 2, 'Feb' UNION SELECT 3, 'Mar' UNION SELECT 4, 'Apr' UNION
+          SELECT 5, 'May' UNION SELECT 6, 'Jun' UNION SELECT 7, 'Jul' UNION
+          SELECT 8, 'Aug' UNION SELECT 9, 'Sep' UNION SELECT 10, 'Oct' UNION
+          SELECT 11, 'Nov' UNION SELECT 12, 'Dec'
+        ) mr
+        LEFT JOIN (
+          SELECT 
+            MONTH(time) as month,
+            MAX(Ett) - MIN(Ett) as monthly_energy,
+            COUNT(*) as record_count
+          FROM \`${tableName}\`
+          WHERE YEAR(time) = ?
+          GROUP BY MONTH(time)
+        ) md ON mr.month = md.month
+        ORDER BY mr.month ASC
+      `;
+
+      const [rows] = await this.connection.execute(query, [currentYear]);
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Monthly energy calculation completed for ESP ${espId} in ${duration}ms (${rows.length} months)`);
+      
+      // Format the results
+      const result = rows.map(row => ({
+        month: row.month_name,
+        monthNumber: row.month,
+        energy: Math.max(0, parseFloat(row.monthly_energy) || 0),
+        recordCount: parseInt(row.record_count) || 0,
+        year: currentYear
+      }));
+      
+      return result;
+      
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        console.log(`⚠️  Table '${tableName}' does not exist for ESP ${espId} - returning empty data`);
+        
+        // Return empty data for all 12 months
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const result = monthNames.map((monthName, index) => ({
+          month: monthName,
+          monthNumber: index + 1,
+          energy: 0,
+          recordCount: 0,
+          year: currentYear
+        }));
+        
+        return result;
+      }
+      
+      console.error(`❌ Failed to calculate monthly energy for ESP ${espId} after ${duration}ms:`);
+      console.error(`   Database Error: ${error.message}`);
+      console.error(`   Error Code: ${error.code || 'UNKNOWN'}`);
+      console.error(`   SQL State: ${error.sqlState || 'N/A'}`);
+      
+      throw new Error(`Monthly energy calculation failed for ESP ${espId}: ${error.message}`);
+    }
+  }
+
   async close() {
     // Don't close the shared pool, just reset the reference
     // The pool is managed by the database configuration
