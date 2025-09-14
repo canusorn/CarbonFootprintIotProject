@@ -1,13 +1,12 @@
 <template>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <!-- <div class="header-left">
-        <h1>Carbon Footprint Dashboard</h1>
-      </div> -->
       <div class="header-left">
         <div class="device-info-section">
           <div class="device-name-container">
-            <i class="pi pi-microchip" style="color: #3498db; margin-right: 8px;"></i>
+            <router-link to="/" class="back-to-devices-link">
+              <i class="pi pi-arrow-left" style="color: #3498db; margin-right: 8px;"></i>
+            </router-link>
             <div v-if="!isEditingDeviceName" class="device-name-display">
               <span class="device-name">{{ currentDevice.name || 'Unknown Device' }}</span>
               <span class="device-id">({{ espId }})</span>
@@ -2261,7 +2260,7 @@ console.log(sensorData);
 .device-name {
   font-weight: 600;
   color: #2c3e50;
-  font-size: 1.1rem;
+  font-size: 2rem;
 }
 
 .device-id {
@@ -2277,7 +2276,7 @@ console.log(sensorData);
 }
 
 .device-name-input {
-  min-width: 200px;
+  min-width: 250px;
 }
 
 .edit-btn,
@@ -3699,6 +3698,18 @@ console.log(sensorData);
     max-height: 250px !important;
     max-width: 250px !important;
   }
+}
+
+.back-to-devices-link {
+  text-decoration: none;
+  color: inherit;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.back-to-devices-link i {
+  font-size: 1.5rem;
 }
 
 </style>

@@ -56,9 +56,6 @@
             <button @click="viewSensorData(device.espid)" class="action-btn primary">
               View Sensor Data
             </button>
-            <button @click="editDevice(device)" class="action-btn secondary">
-              Edit Device
-            </button>
           </div>
         </div>
       </div>
