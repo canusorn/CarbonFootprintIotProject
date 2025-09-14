@@ -373,7 +373,8 @@ export default {
     DataCard,
     EnergyCard,
     CO2Card,
-    DailyEnergyChart, Dropdown
+    DailyEnergyChart, 
+    Dropdown
   },
   setup() {
     const route = useRoute()
@@ -779,6 +780,9 @@ export default {
         if (response.data && Array.isArray(response.data)) {
           todayPowerData.value = response.data.map(item => ({
             time: item.time,
+            Va: parseFloat(item.Va || 0),
+            Vb: parseFloat(item.Vb || 0),
+            Vc: parseFloat(item.Vc || 0),
             Pa: parseFloat(item.Pa || 0),
             Pb: parseFloat(item.Pb || 0),
             Pc: parseFloat(item.Pc || 0),
@@ -1082,19 +1086,20 @@ export default {
         // Set fallback data flag
         isUsingFallbackData.value = true
 
-        // Update sensorData with last known power values
+        // Update sensorData with last known power and voltage values
         sensorData.value = {
           ...sensorData.value,
           Pa: lastRecord.Pa || 0,
           Pb: lastRecord.Pb || 0,
           Pc: lastRecord.Pc || 0,
-          // Keep other sensor values as they are or set defaults
-          Va: sensorData.value.Va || 220,
-          Vb: sensorData.value.Vb || 220,
-          Vc: sensorData.value.Vc || 220,
-          Ia: sensorData.value.Ia || (lastRecord.Pa / 220) || 0,
-          Ib: sensorData.value.Ib || (lastRecord.Pb / 220) || 0,
-          Ic: sensorData.value.Ic || (lastRecord.Pc / 220) || 0,
+          // Use real voltage data from database
+          Va: lastRecord.Va || 0,
+          Vb: lastRecord.Vb || 0,
+          Vc: lastRecord.Vc || 0,
+          // Calculate current using real voltage data (I = P / V)
+          Ia: lastRecord.Va > 0 ? (lastRecord.Pa / lastRecord.Va) : 0,
+          Ib: lastRecord.Vb > 0 ? (lastRecord.Pb / lastRecord.Vb) : 0,
+          Ic: lastRecord.Vc > 0 ? (lastRecord.Pc / lastRecord.Vc) : 0,
           PFa: sensorData.value.PFa || 0.85,
           PFb: sensorData.value.PFb || 0.85,
           PFc: sensorData.value.PFc || 0.85,
@@ -1264,7 +1269,7 @@ export default {
       switch (preset) {
         case 'today':
           start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-          end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+          end = new Date() // Current time, not end of day
           break
         case 'yesterday':
           start = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
@@ -1319,8 +1324,16 @@ export default {
           return
         }
 
-        const startDateStr = startDate.value.toISOString().split('T')[0] + ' 00:00:00'
-        const endDateStr = endDate.value.toISOString().split('T')[0] + ' 23:59:59'
+        // Format dates in local timezone to avoid UTC conversion issues
+        const formatLocalDate = (date) => {
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        }
+        
+        const startDateStr = formatLocalDate(startDate.value) + ' 00:00:00'
+        const endDateStr = formatLocalDate(endDate.value) + ' 23:59:59'
 
         const response = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}/history`, {
           params: {

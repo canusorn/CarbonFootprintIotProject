@@ -417,10 +417,13 @@ class SensorService {
     try {
       console.log(`🔄 Fetching today's power data for ESP: ${espId}`);
       
-      // Get all power data for today for line chart
+      // Get all power and voltage data for today for line chart
       const query = `
         SELECT 
           time,
+          Va,
+          Vb,
+          Vc,
           Pa,
           Pb,
           Pc,
@@ -438,6 +441,9 @@ class SensorService {
       // Format the results for chart display
       const result = rows.map(row => ({
         time: row.time,
+        Va: parseFloat(row.Va) || 0,
+        Vb: parseFloat(row.Vb) || 0,
+        Vc: parseFloat(row.Vc) || 0,
         Pa: parseFloat(row.Pa) || 0,
         Pb: parseFloat(row.Pb) || 0,
         Pc: parseFloat(row.Pc) || 0,
