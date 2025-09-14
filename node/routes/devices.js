@@ -172,16 +172,24 @@ const createDeviceRoutes = (deviceService, sensorService) => {
     getDailyEnergyData: async (req, res) => {
       try {
         const { espId } = req.params;
-        const { days = 30 } = req.query;
+        const { days = 30, month } = req.query;
         
         if (!espId) {
           return res.status(400).json({ error: 'ESP ID is required' });
         }
         
-        // Validate days parameter
-        const daysInt = parseInt(days);
-        if (isNaN(daysInt) || daysInt < 1 || daysInt > 365) {
-          return res.status(400).json({ error: 'Days parameter must be between 1 and 365' });
+        // If month is provided, validate it (YYYY-MM format)
+        if (month) {
+          const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/;
+          if (!monthRegex.test(month)) {
+            return res.status(400).json({ error: 'Month parameter must be in YYYY-MM format' });
+          }
+        } else {
+          // Validate days parameter only if month is not provided
+          const daysInt = parseInt(days);
+          if (isNaN(daysInt) || daysInt < 1 || daysInt > 365) {
+            return res.status(400).json({ error: 'Days parameter must be between 1 and 365' });
+          }
         }
         
         // Check if sensor service is available
@@ -189,7 +197,8 @@ const createDeviceRoutes = (deviceService, sensorService) => {
           return res.status(503).json({ error: 'Sensor service not available. Please check database connection.' });
         }
         
-        const data = await sensorService.getDailyEnergyData(espId, daysInt);
+        const daysInt = parseInt(days);
+        const data = await sensorService.getDailyEnergyData(espId, daysInt, month);
         res.json(data);
       } catch (error) {
         console.error('Error retrieving daily energy data:', error.message);

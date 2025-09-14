@@ -204,10 +204,18 @@
           </div>
 
           <!-- Daily Energy Chart -->
-          <DailyEnergyChart :daily-energy-data="dailyEnergyData" :emission-factor="emissionFactor" />
+          <DailyEnergyChart 
+            :daily-energy-data="dailyEnergyData" 
+            :emission-factor="emissionFactor" 
+            @month-changed="handleMonthChange"
+          />
           
           <!-- Monthly Energy Chart -->
-          <MonthlyEnergyChart :monthly-energy-data="monthlyEnergyData" :emission-factor="emissionFactor" />
+          <MonthlyEnergyChart 
+            :monthly-energy-data="monthlyEnergyData" 
+            :emission-factor="emissionFactor" 
+            @year-changed="handleYearChange"
+          />
         </div>
       </TabPanel>
 
@@ -1955,6 +1963,64 @@ export default {
       }
     }
 
+    // Handler for year change in MonthlyEnergyChart
+    const handleYearChange = async (year) => {
+      console.log('Year changed to:', year)
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`http://localhost:3000/api/monthly-energy/${espId.value}`, {
+          params: {
+            year: year
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.data && Array.isArray(response.data)) {
+          monthlyEnergyData.value = response.data.map(item => ({
+            month: item.month,
+            energy: parseFloat(item.energy || 0),
+            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            recordCount: parseInt(item.recordCount || 0)
+          }))
+          console.log('Fetched monthly energy data for year', year, ':', monthlyEnergyData.value.length, 'records')
+        }
+      } catch (error) {
+        console.error('Error fetching monthly energy data for year', year, ':', error)
+        monthlyEnergyData.value = []
+      }
+    }
+
+    // Handler for month change in DailyEnergyChart
+    const handleMonthChange = async (month) => {
+      console.log('Month changed to:', month)
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`http://localhost:3000/api/daily-energy/${espId.value}`, {
+          params: {
+            month: month
+          },
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.data && Array.isArray(response.data)) {
+          dailyEnergyData.value = response.data.map(item => ({
+            date: item.date,
+            energy: parseFloat(item.energy || 0),
+            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            recordCount: parseInt(item.recordCount || 0)
+          }))
+          console.log('Fetched daily energy data for month', month, ':', dailyEnergyData.value.length, 'records')
+        }
+      } catch (error) {
+        console.error('Error fetching daily energy data for month', month, ':', error)
+        dailyEnergyData.value = []
+      }
+    }
+
     // Cleanup uPlot charts on unmount
     onUnmounted(() => {
       if (uplotChart.value) {
@@ -2029,7 +2095,10 @@ export default {
       datePresetOptions,
       chartTypeOptions,
       onPresetChange,
-      onChartTypeChange
+      onChartTypeChange,
+      // Date change handlers for energy charts
+      handleYearChange,
+      handleMonthChange
     }
   }
 }

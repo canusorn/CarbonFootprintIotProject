@@ -229,7 +229,7 @@ class SensorService {
     }
   }
 
-  async getDailyEnergyData(espId, days = 30) {
+  async getDailyEnergyData(espId, days = 30, month = null) {
     const startTime = Date.now();
     
     if (!this.connection) {
@@ -239,64 +239,125 @@ class SensorService {
     const tableName = `${espId}`;
     
     try {
-      console.log(`🔄 Calculating daily energy data for ESP: ${espId} (last ${days} days)`);
-      
-      // SQL query to calculate daily energy consumption for the last N days
-      // Using subqueries instead of CTEs for MySQL compatibility
-      const query = `
-        SELECT 
-          dr.date,
-          COALESCE(dd.daily_energy, 0) as daily_energy,
-          COALESCE(dd.record_count, 0) as record_count
-        FROM (
-          SELECT DATE_SUB(CURDATE(), INTERVAL (seq - 1) DAY) as date
-          FROM (
-            SELECT @row := @row + 1 as seq
-            FROM (
-              SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
-              SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
-            ) t1,
-            (
-              SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
-              SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
-            ) t2,
-            (SELECT @row := 0) r
-          ) seq_table
-          WHERE seq <= ?
-        ) dr
-        LEFT JOIN (
+      // If month is provided (YYYY-MM format), get data for that specific month
+      if (month) {
+        console.log(`🔄 Calculating daily energy data for ESP: ${espId} (month ${month})`);
+        
+        const [year, monthNum] = month.split('-');
+        const startDate = `${year}-${monthNum.padStart(2, '0')}-01`;
+        const endDate = new Date(parseInt(year), parseInt(monthNum), 0).getDate(); // Last day of month
+        const endDateStr = `${year}-${monthNum.padStart(2, '0')}-${endDate.toString().padStart(2, '0')}`;
+        
+        // Generate all days in the month
+        const query = `
           SELECT 
-            DATE(time) as date,
-            MAX(Ett) - MIN(Ett) as daily_energy,
-            COUNT(*) as record_count
-          FROM \`${tableName}\`
-          WHERE time >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-            AND time < CURDATE() + INTERVAL 1 DAY
-          GROUP BY DATE(time)
-        ) dd ON dr.date = dd.date
-        ORDER BY dr.date ASC
-      `;
-
-      const [rows] = await this.connection.execute(query, [days, days]);
-      
-      const duration = Date.now() - startTime;
-      console.log(`✅ Daily energy calculation completed for ESP ${espId} in ${duration}ms (${rows.length} days)`);
-      
-      // Format the results
-      const result = rows.map(row => {
-        const adjustedDate = new Date(row.date);
-        adjustedDate.setDate(adjustedDate.getDate() + 1);
-        // Handle UTC+7 timezone offset
-        const utcTime = adjustedDate.getTime() + (adjustedDate.getTimezoneOffset() * 60000);
-        const localTime = new Date(utcTime + (7 * 3600000)); // UTC+7
-        return {
-          date: localTime.toISOString().split('T')[0],
+            dr.date,
+            COALESCE(dd.daily_energy, 0) as daily_energy,
+            COALESCE(dd.record_count, 0) as record_count
+          FROM (
+            SELECT DATE_ADD('${startDate}', INTERVAL (seq - 1) DAY) as date
+            FROM (
+              SELECT @row := @row + 1 as seq
+              FROM (
+                SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+                SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+              ) t1,
+              (
+                SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+                SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+              ) t2,
+              (SELECT @row := 0) r
+            ) seq_table
+            WHERE seq <= ${endDate}
+          ) dr
+          LEFT JOIN (
+            SELECT 
+              DATE(time) as date,
+              MAX(Ett) - MIN(Ett) as daily_energy,
+              COUNT(*) as record_count
+            FROM \`${tableName}\`
+            WHERE DATE(time) >= '${startDate}'
+              AND DATE(time) <= '${endDateStr}'
+            GROUP BY DATE(time)
+          ) dd ON dr.date = dd.date
+          WHERE dr.date <= '${endDateStr}'
+          ORDER BY dr.date ASC
+        `;
+        
+        const [rows] = await this.connection.execute(query);
+        
+        const duration = Date.now() - startTime;
+        console.log(`✅ Daily energy calculation completed for ESP ${espId} (month ${month}) in ${duration}ms (${rows.length} days)`);
+        
+        // Format the results
+        const result = rows.map(row => ({
+          date: new Date(row.date).toISOString().split('T')[0],
           energy: Math.max(0, parseFloat(row.daily_energy) || 0),
           recordCount: parseInt(row.record_count) || 0
-        };
-      });
+        }));
+        
+        return result;
+      } else {
+        // Original logic for last N days
+        console.log(`🔄 Calculating daily energy data for ESP: ${espId} (last ${days} days)`);
+        
+        // SQL query to calculate daily energy consumption for the last N days
+        // Using subqueries instead of CTEs for MySQL compatibility
+        const query = `
+          SELECT 
+            dr.date,
+            COALESCE(dd.daily_energy, 0) as daily_energy,
+            COALESCE(dd.record_count, 0) as record_count
+          FROM (
+            SELECT DATE_SUB(CURDATE(), INTERVAL (seq - 1) DAY) as date
+            FROM (
+              SELECT @row := @row + 1 as seq
+              FROM (
+                SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+                SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+              ) t1,
+              (
+                SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+                SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9
+              ) t2,
+              (SELECT @row := 0) r
+            ) seq_table
+            WHERE seq <= ?
+          ) dr
+          LEFT JOIN (
+            SELECT 
+              DATE(time) as date,
+              MAX(Ett) - MIN(Ett) as daily_energy,
+              COUNT(*) as record_count
+            FROM \`${tableName}\`
+            WHERE time >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+              AND time < CURDATE() + INTERVAL 1 DAY
+            GROUP BY DATE(time)
+          ) dd ON dr.date = dd.date
+          ORDER BY dr.date ASC
+        `;
+
+        const [rows] = await this.connection.execute(query, [days, days]);
       
-      return result;
+        const duration = Date.now() - startTime;
+        console.log(`✅ Daily energy calculation completed for ESP ${espId} in ${duration}ms (${rows.length} days)`);
+        
+        // Format the results
+        const result = rows.map(row => {
+          const adjustedDate = new Date(row.date);
+          adjustedDate.setDate(adjustedDate.getDate() + 1);
+          // Handle UTC+7 timezone offset
+          const utcTime = adjustedDate.getTime() + (adjustedDate.getTimezoneOffset() * 60000);
+          const localTime = new Date(utcTime + (7 * 3600000)); // UTC+7
+          return {
+            date: localTime.toISOString().split('T')[0],
+            energy: Math.max(0, parseFloat(row.daily_energy) || 0),
+            recordCount: parseInt(row.record_count) || 0
+          };
+        });
+        
+        return result;
+      }
       
     } catch (error) {
       const duration = Date.now() - startTime;

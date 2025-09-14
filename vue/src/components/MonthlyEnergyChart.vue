@@ -3,6 +3,25 @@
     <!-- Chart Section -->
     <div class="chart-section">
       <h4>Monthly Energy Consumption & CO2 Emissions - Year View</h4>
+      
+      <!-- Controls Row -->
+      <div class="controls-row">
+        <div class="date-picker-container">
+          <label for="year-picker">Select Year:</label>
+          <input 
+            id="year-picker"
+            type="number" 
+            v-model="selectedYear" 
+            class="year-picker"
+            :min="2020"
+            :max="new Date().getFullYear()"
+          />
+        </div>
+        <button @click="downloadCSV" class="download-btn">
+          📥 Download CSV
+        </button>
+      </div>
+      
       <!-- 2-Column Layout -->
       <div class="two-column-layout">
         <!-- First Column: Summary Cards -->
@@ -40,7 +59,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Card from 'primevue/card'
 import { Bar, Pie } from 'vue-chartjs'
 import {
@@ -73,6 +92,7 @@ export default {
     Bar,
     Pie
   },
+  emits: ['year-changed'],
   props: {
     monthlyEnergyData: {
       type: Array,
@@ -83,7 +103,15 @@ export default {
       default: 0.5
     }
   },
-  setup(props) {
+  setup(props, { emit }) {
+    // Reactive data
+    const selectedYear = ref(new Date().getFullYear()) // Current year
+    
+    // Watch for year changes and emit event to parent
+    watch(selectedYear, (newYear) => {
+      emit('year-changed', newYear)
+    })
+    
     // Calculate totals
     const totalEnergy = computed(() => {
       return props.monthlyEnergyData.reduce((sum, item) => sum + (item.energy || 0), 0)
@@ -95,6 +123,34 @@ export default {
         return sum + co2
       }, 0)
     })
+    
+    // CSV Download function
+    const downloadCSV = () => {
+      if (!props.monthlyEnergyData.length) {
+        alert('No data available to download')
+        return
+      }
+      
+      const headers = ['Month', 'Energy (kWh)', 'CO2 Emissions (kg)']
+      const csvContent = [
+        headers.join(','),
+        ...props.monthlyEnergyData.map(item => [
+          item.month,
+          item.energy.toFixed(2),
+          item.co2.toFixed(2)
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `monthly-energy-data-${selectedYear.value}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
 
     // Chart data computation
     const chartData = computed(() => {
@@ -234,12 +290,14 @@ export default {
     })
 
     return {
+      selectedYear,
       totalEnergy,
       totalCO2,
       chartData,
       chartOptions,
       pieChartData,
-      pieChartOptions
+      pieChartOptions,
+      downloadCSV
     }
   }
 }
@@ -248,6 +306,55 @@ export default {
 <style scoped>
 .energy-chart {
   padding: 1rem;
+}
+
+.controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  gap: 1rem;
+}
+
+.date-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-picker-container label {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.year-picker {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 80px;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #42A5F5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.download-btn:hover {
+  background: #1E88E5;
 }
 
 .two-column-layout {
@@ -261,7 +368,8 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  height: 100%;
 }
 
 .pie-chart-column {
@@ -272,10 +380,14 @@ export default {
 
 .summary-item {
   text-align: center;
-  padding: 1rem;
+  padding: 1.5rem;
   background: #f8f9fa;
   border-radius: 8px;
   flex: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .summary-column .summary-item:first-child {
@@ -355,6 +467,20 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .date-picker-container {
+    justify-content: center;
+  }
+  
+  .download-btn {
+    justify-content: center;
+  }
+  
   .two-column-layout {
     flex-direction: column;
     gap: 1rem;

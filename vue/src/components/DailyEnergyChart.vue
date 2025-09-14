@@ -4,7 +4,25 @@
 
     <!-- Chart Section -->
     <div class="chart-section">
-      <h4>Daily Energy Consumption & CO2 Emissions Last 30 Days</h4>
+      <h4>Daily Energy Consumption & CO2 Emissions - Current Month</h4>
+      
+      <!-- Controls Row -->
+      <div class="controls-row">
+        <div class="date-picker-container">
+          <label for="monthPicker">Select Month:</label>
+          <input 
+            id="monthPicker"
+            type="month" 
+            v-model="selectedMonth" 
+            class="month-picker"
+          />
+        </div>
+        <button @click="downloadCSV" class="download-btn">
+          <i class="pi pi-download"></i>
+          Download CSV
+        </button>
+      </div>
+      
       <!-- Two Column Layout -->
       <div class="two-column-layout">
         <!-- Summary Column -->
@@ -43,7 +61,7 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import Card from 'primevue/card'
 import { Bar, Pie } from 'vue-chartjs'
 import {
@@ -76,6 +94,7 @@ export default {
     Bar,
     Pie
   },
+  emits: ['month-changed'],
   props: {
     dailyEnergyData: {
       type: Array,
@@ -86,7 +105,15 @@ export default {
       default: 0.5
     }
   },
-  setup(props) {
+  setup(props, { emit }) {
+    // Reactive data
+    const selectedMonth = ref(new Date().toISOString().slice(0, 7)) // Current month in YYYY-MM format
+    
+    // Watch for month changes and emit event to parent
+    watch(selectedMonth, (newMonth) => {
+      emit('month-changed', newMonth)
+    })
+    
     // Calculate totals
     const totalEnergy = computed(() => {
       return props.dailyEnergyData.reduce((sum, item) => sum + (item.energy || 0), 0)
@@ -98,6 +125,34 @@ export default {
         return sum + co2
       }, 0)
     })
+    
+    // CSV Download function
+    const downloadCSV = () => {
+      if (!props.dailyEnergyData.length) {
+        alert('No data available to download')
+        return
+      }
+      
+      const headers = ['Date', 'Energy (kWh)', 'CO2 Emissions (kg)']
+      const csvContent = [
+        headers.join(','),
+        ...props.dailyEnergyData.map(item => [
+          item.date,
+          item.energy.toFixed(2),
+          item.co2.toFixed(2)
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `daily-energy-data-${selectedMonth.value}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
     // Chart data computation
     const chartData = computed(() => {
       if (!props.dailyEnergyData.length) {
@@ -237,12 +292,14 @@ export default {
     })
 
     return {
+      selectedMonth,
       totalEnergy,
       totalCO2,
       chartData,
       chartOptions,
       pieChartData,
-      pieChartOptions
+      pieChartOptions,
+      downloadCSV
     }
   }
 }
@@ -251,6 +308,54 @@ export default {
 <style scoped>
 .energy-chart {
   padding: 1rem;
+}
+
+.controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  gap: 1rem;
+}
+
+.date-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-picker-container label {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.month-picker {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #42A5F5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.download-btn:hover {
+  background: #1E88E5;
 }
 
 .two-column-layout {
@@ -264,7 +369,8 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  height: 100%;
 }
 
 .pie-chart-column {
@@ -275,10 +381,14 @@ export default {
 
 .summary-item {
   text-align: center;
-  padding: 1rem;
+  padding: 1.5rem;
   background: #f8f9fa;
   border-radius: 8px;
   flex: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .summary-column .summary-item:first-child {
@@ -358,6 +468,20 @@ export default {
 }
 
 @media (max-width: 768px) {
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .date-picker-container {
+    justify-content: center;
+  }
+  
+  .download-btn {
+    justify-content: center;
+  }
+  
   .two-column-layout {
     flex-direction: column;
     gap: 1rem;
