@@ -3712,4 +3712,13 @@ console.log(sensorData);
   font-size: 1.5rem;
 }
 
+
+.detail .label {
+  font-size: 1.2rem;
+}
+
+.detail .value {
+  font-size: 1.2rem;
+}
+
 </style>
