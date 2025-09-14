@@ -544,6 +544,7 @@ class SensorService {
       console.log(`🔄 Calculating monthly energy data for ESP: ${espId} (year ${currentYear})`);
       
       // SQL query to calculate monthly energy consumption for the specified year
+      // Updated to sum daily energy consumption instead of using MAX-MIN approach
       const query = `
         SELECT 
           mr.month,
@@ -560,12 +561,22 @@ class SensorService {
         ) mr
         LEFT JOIN (
           SELECT 
-            MONTH(time) as month,
-            MAX(Ett) - MIN(Ett) as monthly_energy,
-            COUNT(*) as record_count
-          FROM \`${tableName}\`
-          WHERE YEAR(time) = ?
-          GROUP BY MONTH(time)
+            MONTH(date) as month,
+            SUM(daily_energy) as monthly_energy,
+            SUM(record_count) as record_count
+          FROM (
+            SELECT 
+              DATE(time) as date,
+              CASE 
+                WHEN COUNT(*) > 1 THEN MAX(Ett) - MIN(Ett)
+                ELSE 0
+              END as daily_energy,
+              COUNT(*) as record_count
+            FROM \`${tableName}\`
+            WHERE YEAR(time) = ?
+            GROUP BY DATE(time)
+          ) daily_data
+          GROUP BY MONTH(date)
         ) md ON mr.month = md.month
         ORDER BY mr.month ASC
       `;
