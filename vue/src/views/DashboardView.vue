@@ -84,6 +84,10 @@
               <i class="pi pi-flash" :style="{ color: isUsingFallbackData ? '#f39c12' : '#e74c3c' }"></i>
               <h3>{{ isUsingFallbackData ? 'Today\'s Power Consumption (Last Data)' : 'Real-time Power (3-Phase)' }}
               </h3>
+              <div v-if="lastUpdateTime" class="last-update-time">
+                <i class="pi pi-clock"></i>
+                <span>Last Update: {{ formatTimestamp(lastUpdateTime) }}</span>
+              </div>
             </div>
             <div class="power-phases-grid">
               <div class="phase-card phase-a">
@@ -417,6 +421,7 @@ export default {
     const mqttClient = ref(null)
     const isConnected = ref(false)
     const isUsingFallbackData = ref(false)
+    const lastUpdateTime = ref(null)
     const emissionFactor = ref(EMISSION_FACTORS.THAILAND) // kg CO2 per kWh (Thailand grid factor)
     const espId = ref(route.params.espid || 'ESP001') // Get from route parameter or default
 
@@ -515,6 +520,9 @@ export default {
             if (topic === `${espId.value}/update`) {
               const data = JSON.parse(message.toString())
               sensorData.value = { ...sensorData.value, ...data }
+              
+              // Update last update time
+              lastUpdateTime.value = new Date()
 
               // Reset fallback flag when new MQTT data is received
               if (isUsingFallbackData.value) {
@@ -1082,18 +1090,18 @@ export default {
     }
 
     // Simplified real-time update - recreate chart to avoid errors
-    let lastUpdateTime = 0
+    let lastChartUpdateTime = 0
     const UPDATE_THROTTLE = 5000 // 5 seconds between updates
 
     const updatePowerChartRealtime = (updateVar) => {
       if (!updateVar) return
 
       const now = Date.now()
-      if (now - lastUpdateTime < UPDATE_THROTTLE) {
+      if (now - lastChartUpdateTime < UPDATE_THROTTLE) {
         return // Throttle updates
       }
 
-      lastUpdateTime = now
+      lastChartUpdateTime = now
 
       // Check if canvas is available before updating
       if (!powerChartCanvas.value) {
@@ -1122,8 +1130,9 @@ export default {
         const lastRecord = todayPowerData.value[todayPowerData.value.length - 1]
         console.log('Using last available data for power display:', lastRecord)
 
-        // Set fallback data flag
+        // Set fallback data flag and last update time
         isUsingFallbackData.value = true
+        lastUpdateTime.value = new Date(lastRecord.time)
 
         // Update sensorData with last known power and voltage values
         sensorData.value = {
@@ -2041,6 +2050,7 @@ export default {
       powerChartCanvas,
       isConnected,
       isUsingFallbackData,
+      lastUpdateTime,
       emissionFactor,
       totalPower,
       totalCO2,
@@ -3297,5 +3307,23 @@ export default {
 
 :deep(.p-datepicker-trigger:hover) {
   color: #2196f3;
+}
+
+/* Last update time styling */
+.last-update-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+.last-update-time i {
+  font-size: 0.8rem;
+}
+
+.last-update-time span {
+  font-weight: 500;
 }
 </style>
