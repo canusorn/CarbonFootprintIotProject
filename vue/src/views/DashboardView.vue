@@ -48,31 +48,26 @@
             </div>
           </div>
 
-          <!-- Today Energy Card -->
-          <div class="today-energy-card">
-            <div class="energy-card-header">
-              <i class="pi pi-bolt" style="color: #f39c12;"></i>
-              <h3>Today's Energy</h3>
-            </div>
-            <div class="energy-card-content">
-              <div class="energy-values-row">
-                <div class="energy-value">
-                  <span class="value">{{ todayEnergyData.todayEnergy.toFixed(2) }}</span>
-                  <span class="unit">kWh</span>
-                </div>
-                <div class="energy-value co2-emission">
-                  <span class="value">{{ formatCO2(dailyCO2, 2) }}</span>
-                  <span class="unit">kgCO2e</span>
-                </div>
+          <!-- Total Energy Card with Pie Chart -->
+          <div class="two-column-layout">
+            <div class="left-column">
+              <h3>Energy and CO2 Emissions</h3>
+              <div class="card-item blue">
+                <h5>Total Energy</h5>
+                <span class="value">{{ sensorData.Ett.toFixed(2) }} kWh</span>
               </div>
-              <div class="energy-details">
-                <div class="detail-item">
-                  <span class="label">Start:</span>
-                  <span class="value">{{ todayEnergyData.startEnergy.toFixed(2) }} kWh</span>
-                </div>
-                <div class="detail-item">
-                  <span class="label">Current:</span>
-                  <span class="value">{{ todayEnergyData.endEnergy.toFixed(2) }} kWh</span>
+              <div class="card-item orange">
+                <h5>Total CO2 Emissions</h5>
+                <span class="value">{{ formatCO2(totalCO2, 2) }}</span>
+              </div>
+            </div>
+            <div class="right-column">
+              <div class="card-item chart">
+                <div class="chart-wrapper">
+                  <Pie 
+                    :data="energyVsCO2ChartData" 
+                    :options="energyVsCO2ChartOptions" 
+                  />
                 </div>
               </div>
             </div>
@@ -82,7 +77,7 @@
           <div class="realtime-power-section">
             <div class="power-section-header">
               <i class="pi pi-flash" :style="{ color: isUsingFallbackData ? '#f39c12' : '#e74c3c' }"></i>
-              <h3>{{ isUsingFallbackData ? 'Today\'s Power Consumption (Last Data)' : 'Real-time Power (3-Phase)' }}
+              <h3>{{ isUsingFallbackData ? 'Realtime Power Consumption (Last Data)' : 'Real-time Power (3-Phase)' }}
               </h3>
               <div v-if="lastUpdateTime" class="last-update-time">
                 <i class="pi pi-clock"></i>
@@ -170,24 +165,28 @@
 
               <div class="phase-card total-power">
                 <div class="phase-header">
-                  <span class="phase-label">Total Power</span>
+                  <span class="phase-label">Today's Energy</span>
                   <i class="pi pi-bolt phase-indicator"></i>
                 </div>
-                <div class="phase-value total">
-                  <span class="value">{{ totalPower.toFixed(2) }}</span>
-                  <span class="unit">W</span>
+                <div class="phase-value" style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
+                  <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="10000" 
+                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" valueTemplate="{value} W" />
                 </div>
                 <div class="phase-details">
                   <div class="detail">
-                    <span class="label">Energy Total:</span>
-                    <span class="value">{{ sensorData.Ett.toFixed(2) }} kWh</span>
+                    <span class="label">Today's Energy:</span>
+                    <span class="value">{{ todayEnergyData.todayEnergy.toFixed(2) }} kWh</span>
                   </div>
                   <div class="detail">
-                    <span class="label">CO2 Impact:</span>
-                    <span class="value">{{ formatCO2(totalCO2, 2) }}</span>
+                    <span class="label">Start Energy:</span>
+                    <span class="value">{{ todayEnergyData.startEnergy.toFixed(2) }} kWh</span>
                   </div>
                   <div class="detail">
-                    <span class="label">Daily CO2:</span>
+                    <span class="label">Current Energy:</span>
+                    <span class="value">{{ todayEnergyData.endEnergy.toFixed(2) }} kWh</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">Today's CO2:</span>
                     <span class="value">{{ formatCO2(dailyCO2, 2) }}</span>
                   </div>
                 </div>
@@ -354,6 +353,7 @@ import mqtt from 'mqtt'
 import axios from 'axios'
 import { Chart, registerables } from 'chart.js'
 import 'chartjs-adapter-date-fns'
+import { Pie } from 'vue-chartjs'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
@@ -399,7 +399,8 @@ export default {
     DailyEnergyChart,
     MonthlyEnergyChart,
     Dropdown,
-    Knob
+    Knob,
+    Pie
   },
   setup() {
     const route = useRoute()
@@ -498,6 +499,57 @@ export default {
     const co2Equivalents = computed(() => {
       return getCO2Equivalents(totalCO2.value)
     })
+
+    // Pie chart data for Energy vs CO2 visualization
+    const energyVsCO2ChartData = computed(() => {
+      const energyTotal = parseFloat(sensorData.value.Ett) || 0
+      const co2Total = totalCO2.value || 0
+      
+      return {
+        labels: ['Energy Consumption (kWh)', 'CO2 Emissions (kg)'],
+        datasets: [{
+          data: [energyTotal, co2Total],
+          backgroundColor: [
+            '#3B82F6', // Blue for energy
+            '#EF4444'  // Red for CO2
+          ],
+          borderColor: [
+            '#2563EB',
+            '#DC2626'
+          ],
+          borderWidth: 2
+        }]
+      }
+    })
+
+    const energyVsCO2ChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 10,
+            font: {
+              size: 12
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const label = context.label || ''
+              const value = context.parsed
+              if (label.includes('Energy')) {
+                return `${label}: ${value.toFixed(2)} kWh`
+              } else {
+                return `${label}: ${formatCO2(value, 2)}`
+              }
+            }
+          }
+        }
+      }
+    }
 
     const connectionStatus = computed(() => {
       return isConnected.value ? 'Connected' : 'Disconnected'
@@ -2091,6 +2143,8 @@ console.log(sensorData);
       maxPa,
       maxPb,
       maxPc,
+      energyVsCO2ChartData,
+      energyVsCO2ChartOptions,
       connectionStatus,
       connectionStatusIcon,
       connectionStatusColor,
@@ -2459,38 +2513,66 @@ console.log(sensorData);
   color: #666;
 }
 
-/* Today Energy Card Styles */
+/* Enhanced Today Energy Card Styles */
 .today-energy-card {
-  background: linear-gradient(135deg, #2d661f 0%, #3b860f 100%);
-  border-radius: 16px;
-  padding: 24px;
+  background: linear-gradient(135deg, #2d661f 0%, #3b860f 50%, #4a9d12 100%);
+  border-radius: 20px;
+  padding: 28px;
   margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 40px rgba(45, 102, 31, 0.3), 0 4px 12px rgba(0, 0, 0, 0.1);
   color: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.today-energy-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .today-energy-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(45, 102, 31, 0.4), 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .energy-card-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+  position: relative;
 }
 
 .energy-card-header i {
-  font-size: 24px;
+  font-size: 28px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .energy-card-header h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.5px;
 }
 
 .energy-card-content {
@@ -2504,20 +2586,25 @@ console.log(sensorData);
 .energy-value {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
 }
 
 .energy-value .value {
-  font-size: 36px;
-  font-weight: 700;
+  font-size: 42px;
+  font-weight: 800;
   color: white;
   line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.5px;
 }
 
 .energy-value .unit {
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .energy-details {
@@ -3456,4 +3543,162 @@ console.log(sensorData);
   max-width: 100%;
   height: auto !important;
 }
+/* Energy vs CO2 Pie Chart Styling */
+.energy-co2-chart {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.pie-chart {
+  max-height: 200px;
+  width: 100%;
+}
+
+.energy-co2-chart canvas {
+  max-height: 200px !important;
+}
+
+/* Three-card layout for energy card */
+.three-card-layout {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.card-item {
+  flex: 1;
+  border-radius: 12px;
+  padding: 0;
+  text-align: center;
+  color: white;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.card-item.blue {
+  background: linear-gradient(135deg, #4A90E2, #357ABD);
+}
+
+.card-item.orange {
+  background: linear-gradient(135deg, #FF6B35, #E55A2B);
+}
+
+.card-item.chart {
+  background: #f8f9fa;
+  color: #333;
+}
+
+.card-item h5 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.card-item .value {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.chart-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
+  margin-top: 8px;
+}
+
+.chart-wrapper canvas {
+  max-height: 70px !important;
+  max-width: 70px !important;
+}
+
+@media (max-width: 768px) {
+  .three-card-layout {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .card-item {
+    min-height: 100px;
+    padding: 16px;
+  }
+  
+  .card-item .value {
+    font-size: 20px;
+  }
+  
+  .chart-wrapper {
+    height: 60px;
+  }
+  
+  .chart-wrapper canvas {
+    max-height: 50px !important;
+    max-width: 50px !important;
+  }
+}
+
+/* Two-column layout for energy cards and chart */
+.two-column-layout {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.left-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.right-column {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.right-column .card-item.chart {
+  width: 100%;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.right-column .chart-wrapper {
+  height: 250px;
+  width: 250px;
+}
+
+.right-column .chart-wrapper canvas {
+  max-height: 250px !important;
+  max-width: 250px !important;
+}
+
+@media (max-width: 768px) {
+  .two-column-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .right-column .chart-wrapper {
+    height: 250px;
+    width: 180px;
+  }
+  
+  .right-column .chart-wrapper canvas {
+    max-height: 250px !important;
+    max-width: 250px !important;
+  }
+}
+
 </style>

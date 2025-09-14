@@ -2,7 +2,7 @@
   <div class="energy-chart">
     <!-- Chart Section -->
     <div class="chart-section">
-      <h4>Monthly Energy Consumption & CO2 Emissions - Year View</h4>
+      <h4>Monthly Energy Consumption & CO2 Emissions</h4>
       
       <!-- Controls Row -->
       <div class="controls-row">
@@ -27,18 +27,18 @@
         <!-- First Column: Summary Cards -->
         <div class="summary-column">
           <div class="summary-item">
-            <h5>Total Energy</h5>
+            <h5>Monthly Energy Consumption</h5>
             <span class="value">{{ totalEnergy.toFixed(2) }} kWh</span>
           </div>
           <div class="summary-item">
-            <h5>Total CO2 Emissions</h5>
+            <h5>Monthly CO2 Emissions</h5>
             <span class="value">{{ totalCO2.toFixed(2) }} kg CO2</span>
           </div>
         </div>
         <!-- Second Column: Pie Chart -->
         <div class="pie-chart-column">
           <div class="pie-chart-container">
-            <h5>Total Energy vs CO2 Emissions</h5>
+            <h5>Monthly Energy vs CO2 Emissions</h5>
             <div class="pie-chart">
               <Pie v-if="monthlyEnergyData.length > 0" :data="pieChartData" :options="pieChartOptions" />
               <div v-else class="no-data-message">

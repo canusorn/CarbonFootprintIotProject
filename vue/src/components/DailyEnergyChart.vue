@@ -4,7 +4,7 @@
 
     <!-- Chart Section -->
     <div class="chart-section">
-      <h4>Daily Energy Consumption & CO2 Emissions - Current Month</h4>
+      <h4>Daily Energy Consumption & CO2 Emissions</h4>
       
       <!-- Controls Row -->
       <div class="controls-row">
@@ -28,11 +28,11 @@
         <!-- Summary Column -->
         <div class="summary-column">
           <div class="summary-item">
-            <h5>Total Energy</h5>
+            <h5>Daily Energy</h5>
             <p class="value">{{ totalEnergy.toFixed(2) }} kWh</p>
           </div>
           <div class="summary-item">
-            <h5>Total CO2 Emissions</h5>
+            <h5>Daily CO2 Emissions</h5>
             <p class="value">{{ totalCO2.toFixed(2) }} kg CO2</p>
           </div>
         </div>
@@ -40,7 +40,7 @@
         <!-- Pie Chart Column -->
         <div class="pie-chart-column">
           <div class="pie-chart-container">
-            <h5>Total Energy vs CO2 Emissions</h5>
+            <h5>Daily Energy vs CO2 Emissions</h5>
             <div class="pie-chart">
               <Pie v-if="dailyEnergyData.length > 0" :data="pieChartData" :options="pieChartOptions" />
               <div v-else class="no-data-message">
