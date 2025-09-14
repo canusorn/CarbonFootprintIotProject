@@ -96,8 +96,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="sensorData.Pa" :readonly="true" :size="150" :min="0" :max="10000" 
-                        :strokeWidth="8" valueColor="#3498db" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+                  <Knob v-model="sensorData.Pa" :readonly="true" :size="150" :min="0" :max="maxPa" 
+                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" valueTemplate="{value} W" />
 
                 </div>
                 <div class="phase-details">
@@ -122,8 +122,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="sensorData.Pb" :readonly="true" :size="150" :min="0" :max="10000" 
-                        :strokeWidth="8" valueColor="#e74c3c" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+                  <Knob v-model="sensorData.Pb" :readonly="true" :size="150" :min="0" :max="maxPb" 
+                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" valueTemplate="{value} W" />
 
                 </div>
                 <div class="phase-details">
@@ -148,8 +148,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="sensorData.Pc" :readonly="true" :size="150" :min="0" :max="10000" 
-                        :strokeWidth="8" valueColor="#f39c12" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+                  <Knob v-model="sensorData.Pc" :readonly="true" :size="150" :min="0" :max="maxPc" 
+                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" valueTemplate="{value} W" />
                 </div>
 
                 <div class="phase-details">
@@ -189,10 +189,6 @@
                   <div class="detail">
                     <span class="label">Daily CO2:</span>
                     <span class="value">{{ formatCO2(dailyCO2, 2) }}</span>
-                  </div>
-                  <div class="detail">
-                    <span class="label">≈ Trees Needed:</span>
-                    <span class="value">{{ co2Equivalents.trees }} trees/year</span>
                   </div>
                 </div>
               </div>
@@ -477,6 +473,25 @@ export default {
         1, // 1 hour for rate calculation
         emissionFactor.value
       )
+    })
+
+    // Dynamic max values for knobs - auto-adjust when values exceed current max
+    const maxPa = computed(() => {
+      const currentValue = parseFloat(sensorData.value.Pa) || 0
+      const defaultMax = 10000
+      return currentValue > defaultMax ? currentValue : defaultMax
+    })
+
+    const maxPb = computed(() => {
+      const currentValue = parseFloat(sensorData.value.Pb) || 0
+      const defaultMax = 10000
+      return currentValue > defaultMax ? currentValue : defaultMax
+    })
+
+    const maxPc = computed(() => {
+      const currentValue = parseFloat(sensorData.value.Pc) || 0
+      const defaultMax = 10000
+      return currentValue > defaultMax ? currentValue : defaultMax
     })
 
     // CO2 equivalents for better understanding
@@ -835,7 +850,7 @@ export default {
             'Authorization': `Bearer ${token}`
           }
         })
-console.log("res",response.data);
+        
         if (response.data && Array.isArray(response.data)) {
           todayPowerData.value = response.data.map(item => ({
             time: item.time,
@@ -2073,6 +2088,9 @@ console.log(sensorData);
       dailyCO2,
       phaseCO2Data,
       co2Equivalents,
+      maxPa,
+      maxPb,
+      maxPc,
       connectionStatus,
       connectionStatusIcon,
       connectionStatusColor,
@@ -2378,6 +2396,19 @@ console.log(sensorData);
   color: #666;
   margin-left: 4px;
 }
+
+/* PrimeVue Knob text styling */
+:deep(.p-knob-text) {
+  font-size: 13px !important;
+  font-weight: 700;
+}
+
+:deep(.p-knob svg text) {
+  font-size: 13px !important;
+  font-weight: 700;
+}
+
+
 
 .total-power {
   margin-top: 10px;
