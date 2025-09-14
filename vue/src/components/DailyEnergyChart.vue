@@ -5,24 +5,31 @@
     <!-- Chart Section -->
     <div class="chart-section">
       <h4>Daily Energy Consumption & CO2 Emissions Last 30 Days</h4>
-      <!-- Summary Cards -->
-      <div class="summary-row">
-        <div class="summary-item">
-          <h5>Total Energy</h5>
-          <span class="value">{{ totalEnergy.toFixed(2) }} kWh</span>
-        </div>
-        <div class="pie-chart-container">
-          <h5>Total Energy vs CO2 Emissions</h5>
-          <div class="pie-chart">
-            <Pie v-if="dailyEnergyData.length > 0" :data="pieChartData" :options="pieChartOptions" />
-            <div v-else class="no-data-message">
-              <p>No data for pie chart</p>
-            </div>
+      <!-- Two Column Layout -->
+      <div class="two-column-layout">
+        <!-- Summary Column -->
+        <div class="summary-column">
+          <div class="summary-item">
+            <h5>Total Energy</h5>
+            <p class="value">{{ totalEnergy.toFixed(2) }} kWh</p>
+          </div>
+          <div class="summary-item">
+            <h5>Total CO2 Emissions</h5>
+            <p class="value">{{ totalCO2.toFixed(2) }} kg CO2</p>
           </div>
         </div>
-        <div class="summary-item">
-          <h5>Total CO2 Emissions</h5>
-          <span class="value">{{ totalCO2.toFixed(2) }} kg CO2</span>
+        
+        <!-- Pie Chart Column -->
+        <div class="pie-chart-column">
+          <div class="pie-chart-container">
+            <h5>Total Energy vs CO2 Emissions</h5>
+            <div class="pie-chart">
+              <Pie v-if="dailyEnergyData.length > 0" :data="pieChartData" :options="pieChartOptions" />
+              <div v-else class="no-data-message">
+                <p>No data for pie chart</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="chart-container">
@@ -246,12 +253,24 @@ export default {
   padding: 1rem;
 }
 
-.summary-row {
+.two-column-layout {
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
-  justify-content: space-between;
   align-items: stretch;
+}
+
+.summary-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pie-chart-column {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .summary-item {
@@ -262,12 +281,12 @@ export default {
   flex: 1;
 }
 
-.summary-item:first-child {
+.summary-column .summary-item:first-child {
   background: #42A5F5;
   color: white;
 }
 
-.summary-item:last-child {
+.summary-column .summary-item:last-child {
   background: #FF7043;
   color: white;
 }
@@ -289,9 +308,11 @@ export default {
   padding: 1rem;
   background: #f8f9fa;
   border-radius: 8px;
-  flex: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 300px;
 }
 
 .pie-chart-container h5 {
@@ -337,9 +358,13 @@ export default {
 }
 
 @media (max-width: 768px) {
-  .summary-row {
+  .two-column-layout {
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .summary-column {
+    gap: 0.5rem;
   }
 
   .summary-item {
@@ -348,6 +373,7 @@ export default {
 
   .pie-chart-container {
     min-width: auto;
+    min-height: 250px;
   }
 
   .pie-chart {
