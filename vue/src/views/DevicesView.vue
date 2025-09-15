@@ -96,7 +96,7 @@ export default {
           return
         }
         
-        const response = await axios.get('http://localhost:3000/api/devices', {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + '/api/devices', {
           headers: {
             'Authorization': `Bearer ${token}`
           },

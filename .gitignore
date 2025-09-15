@@ -2,3 +2,4 @@
 /vue/node_modules
 /node_modules
 node/.env
+vue/.env

@@ -570,7 +570,7 @@ export default {
       const clientId = `WEB${timestamp}_${espId.value}`
 
       try {
-        mqttClient.value = mqtt.connect('ws://localhost:8083', {
+        mqttClient.value = mqtt.connect('ws://' + import.meta.env.VITE_HOSTURL + ':8083', {
           clientId: clientId,
           clean: true,
           connectTimeout: 4000,
@@ -718,7 +718,7 @@ export default {
           return
         }
 
-        const response = await axios.get(`http://localhost:3000/api/devices/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/devices/${espId.value}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -762,7 +762,7 @@ export default {
 
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.put(`http://localhost:3000/api/devices/${espId.value}`, {
+        const response = await axios.put(import.meta.env.VITE_SERVERURL + `/api/devices/${espId.value}`, {
           name: editingDeviceName.value.trim()
         }, {
           headers: {
@@ -816,7 +816,7 @@ export default {
     const fetchTodayEnergyData = async () => {
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/today-energy/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/today-energy/${espId.value}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -843,7 +843,7 @@ export default {
     const fetchDailyEnergyData = async () => {
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/daily-energy/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/daily-energy/${espId.value}`, {
           params: {
             days: 30 // Get last 30 days
           },
@@ -871,7 +871,7 @@ export default {
     const fetchMonthlyEnergyData = async () => {
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/monthly-energy/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/monthly-energy/${espId.value}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -896,7 +896,7 @@ export default {
     const fetchTodayPowerData = async () => {
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/today-power/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/today-power/${espId.value}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -1466,7 +1466,7 @@ console.log(sensorData);
         const startDateStr = formatLocalDate(startDate.value) + ' 00:00:00'
         const endDateStr = formatLocalDate(endDate.value) + ' 23:59:59'
 
-        const response = await axios.get(`http://localhost:3000/api/sensor-data/${espId.value}/history`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/sensor-data/${espId.value}/history`, {
           params: {
             startDate: startDateStr,
             endDate: endDateStr
@@ -2059,7 +2059,7 @@ console.log(sensorData);
       console.log('Year changed to:', year)
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/monthly-energy/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/monthly-energy/${espId.value}`, {
           params: {
             year: year
           },
@@ -2088,7 +2088,7 @@ console.log(sensorData);
       console.log('Month changed to:', month)
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`http://localhost:3000/api/daily-energy/${espId.value}`, {
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/daily-energy/${espId.value}`, {
           params: {
             month: month
           },
