@@ -210,7 +210,6 @@
             <div class="chart-column">
               <DailyEnergyChart 
                 :daily-energy-data="dailyEnergyData" 
-                :emission-factor="emissionFactor" 
                 @month-changed="handleMonthChange"
               />
             </div>
@@ -219,7 +218,6 @@
             <div class="chart-column">
               <MonthlyEnergyChart 
                 :monthly-energy-data="monthlyEnergyData" 
-                :emission-factor="emissionFactor" 
                 @year-changed="handleYearChange"
               />
             </div>
@@ -374,8 +372,7 @@ import {
   calculateCO2Emissions,
   calculateThreePhaseCO2,
   formatCO2,
-  getCO2Equivalents,
-  EMISSION_FACTORS
+  getCO2Equivalents
 } from '@/services/co2Calculator.js'
 
 // Register Chart.js components
@@ -430,7 +427,6 @@ export default {
     const isConnected = ref(false)
     const isUsingFallbackData = ref(false)
     const lastUpdateTime = ref(null)
-    const emissionFactor = ref(EMISSION_FACTORS.THAILAND) // kg CO2 per kWh (Thailand grid factor)
     const espId = ref(route.params.espid || 'ESP001') // Get from route parameter or default
 
     // Device management
@@ -453,13 +449,13 @@ export default {
 
     const totalCO2 = computed(() => {
       const energyValue = parseFloat(sensorData.value.Ett) || 0
-      return calculateCO2Emissions(energyValue, emissionFactor.value)
+      return calculateCO2Emissions(energyValue)
     })
 
     const dailyCO2 = computed(() => {
       // Calculate daily CO2 from today's energy consumption
       const energyValue = parseFloat(todayEnergyData.value.todayEnergy) || 0
-      return calculateCO2Emissions(energyValue, emissionFactor.value)
+      return calculateCO2Emissions(energyValue)
     })
 
     // Real-time three-phase CO2 calculations
@@ -470,8 +466,7 @@ export default {
           Pb: sensorData.value.Pb || 0,
           Pc: sensorData.value.Pc || 0
         },
-        1, // 1 hour for rate calculation
-        emissionFactor.value
+        1 // 1 hour for rate calculation
       )
     })
 
@@ -623,7 +618,7 @@ export default {
                 // Update DailyEnergyChart with today's real-time data
                 const todayDate = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
                 const todayEnergy = Math.max(0, calculatedTodayEnergy)
-                const todayCO2 = todayEnergy * emissionFactor.value
+                const todayCO2 = calculateCO2Emissions(todayEnergy)
 
                 // Find today's entry in dailyEnergyData or create new one
                 const todayIndex = dailyEnergyData.value.findIndex(item => item.date === todayDate)
@@ -856,7 +851,7 @@ export default {
           dailyEnergyData.value = response.data.map(item => ({
             date: item.date,
             energy: parseFloat(item.energy || 0),
-            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            co2: calculateCO2Emissions(parseFloat(item.energy || 0)),
             recordCount: parseInt(item.recordCount || 0)
           }))
           console.log('Fetched daily energy data:', dailyEnergyData.value.length, 'records')
@@ -881,7 +876,7 @@ export default {
           monthlyEnergyData.value = response.data.map(item => ({
             month: item.month,
             energy: parseFloat(item.energy || 0),
-            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            co2: calculateCO2Emissions(parseFloat(item.energy || 0)),
             recordCount: parseInt(item.recordCount || 0)
           }))
           console.log('Fetched monthly energy data:', monthlyEnergyData.value.length, 'records')
@@ -1208,6 +1203,60 @@ export default {
       return new Date(timestamp).toLocaleString()
     }
 
+    // Function to fetch latest sensor data when today's data is not available
+    const fetchLatestSensorData = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          console.error('No authentication token found')
+          return
+        }
+
+        // Fetch the most recent sensor data (last 1 record)
+        const response = await axios.get(import.meta.env.VITE_SERVERURL + `/api/sensor-data/${espId.value}/latest`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.data && response.data.length > 0) {
+          const latestData = response.data[0]
+          console.log('Fetched latest sensor data for fallback:', latestData)
+          
+          // Update sensorData with latest available data
+          sensorData.value = {
+            Va: parseFloat(latestData.Va) || 0,
+            Vb: parseFloat(latestData.Vb) || 0,
+            Vc: parseFloat(latestData.Vc) || 0,
+            Ia: parseFloat(latestData.Ia) || 0,
+            Ib: parseFloat(latestData.Ib) || 0,
+            Ic: parseFloat(latestData.Ic) || 0,
+            Pa: parseFloat(latestData.Pa) || 0,
+            Pb: parseFloat(latestData.Pb) || 0,
+            Pc: parseFloat(latestData.Pc) || 0,
+            PFa: parseFloat(latestData.PFa) || 0.85,
+            PFb: parseFloat(latestData.PFb) || 0.85,
+            PFc: parseFloat(latestData.PFc) || 0.85,
+            Eim: parseFloat(latestData.Eim) || 0,
+            Eex: parseFloat(latestData.Eex) || 0,
+            Ett: parseFloat(latestData.Ett) || 0
+          }
+          
+          // Set fallback flag and update time
+          isUsingFallbackData.value = true
+          lastUpdateTime.value = new Date(latestData.time)
+          
+          return true
+        } else {
+          console.warn('No latest sensor data available')
+          return false
+        }
+      } catch (error) {
+        console.error('Error fetching latest sensor data:', error)
+        return false
+      }
+    }
+
     // Function to populate sensorData with last available data
     const populateWithLastData = () => {
       if (todayPowerData.value.length > 0) {
@@ -1248,12 +1297,22 @@ console.log(sensorData);
       setDatePreset('today')
 
       fetchHistoricalData()
-      fetchTodayEnergyData()
+      await fetchTodayEnergyData()
       fetchDailyEnergyData()
       fetchMonthlyEnergyData()
       await fetchTodayPowerData()
 
-      populateWithLastData();
+      // Check if today's energy data is available, if not fetch latest data
+      if (!todayEnergyData.value || !todayEnergyData.value.todayEnergy || todayEnergyData.value.todayEnergy === 0) {
+        console.log('Today\'s energy data is not available, fetching latest sensor data...')
+        const latestDataFetched = await fetchLatestSensorData()
+        if (!latestDataFetched) {
+          // If latest data fetch fails, use the existing fallback mechanism
+          populateWithLastData()
+        }
+      } else {
+        populateWithLastData()
+      }
 
       // Create power chart after DOM is fully rendered and data is loaded
       await nextTick()
@@ -1385,7 +1444,7 @@ console.log(sensorData);
     })
 
     const historicalTotalCO2 = computed(() => {
-      return calculateCO2Emissions(totalEnergy.value, emissionFactor.value)
+      return calculateCO2Emissions(totalEnergy.value)
     })
 
     // Date preset functions
@@ -1555,14 +1614,14 @@ console.log(sensorData);
         // 2. CO2 from Power (instantaneous calculation)
         // Convert power to energy (assuming 1-hour intervals for approximation)
         const powerInKW = totalPower / 1000
-        const co2FromPower = calculateCO2Emissions(powerInKW, emissionFactor.value)
+        const co2FromPower = calculateCO2Emissions(powerInKW)
 
         // 3. Total Energy (kWh)
         const energyValue = parseFloat(record.Ett) || 0
         const totalEnergy = energyValue - baseEnergy
 
         // 4. Cumulative CO2 from Energy (kg)
-        cumulativeCO2 = calculateCO2Emissions(totalEnergy, emissionFactor.value)
+        cumulativeCO2 = calculateCO2Emissions(totalEnergy)
 
         timestamps.push(timestamp)
         powerData.push(totalPower)
@@ -1737,7 +1796,7 @@ console.log(sensorData);
         const Pc = parseFloat(record.Pc) || 0
         const totalPower = Pa + Pb + Pc
         const energyValue = parseFloat(record.Ett) || 0
-        const co2 = calculateCO2Emissions(energyValue, emissionFactor.value)
+        const co2 = calculateCO2Emissions(energyValue)
 
         return [
           new Date(record.time).toLocaleString(),
@@ -2072,7 +2131,7 @@ console.log(sensorData);
           monthlyEnergyData.value = response.data.map(item => ({
             month: item.month,
             energy: parseFloat(item.energy || 0),
-            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            co2: calculateCO2Emissions(parseFloat(item.energy || 0)),
             recordCount: parseInt(item.recordCount || 0)
           }))
           console.log('Fetched monthly energy data for year', year, ':', monthlyEnergyData.value.length, 'records')
@@ -2101,7 +2160,7 @@ console.log(sensorData);
           dailyEnergyData.value = response.data.map(item => ({
             date: item.date,
             energy: parseFloat(item.energy || 0),
-            co2: parseFloat(item.energy || 0) * emissionFactor.value,
+            co2: calculateCO2Emissions(parseFloat(item.energy || 0)),
             recordCount: parseInt(item.recordCount || 0)
           }))
           console.log('Fetched daily energy data for month', month, ':', dailyEnergyData.value.length, 'records')
@@ -2133,7 +2192,6 @@ console.log(sensorData);
       isConnected,
       isUsingFallbackData,
       lastUpdateTime,
-      emissionFactor,
       totalPower,
       totalCO2,
       dailyCO2,
@@ -2150,7 +2208,6 @@ console.log(sensorData);
       formatTimestamp,
       formatCO2,
       calculateCO2Emissions,
-      EMISSION_FACTORS,
       // Device management
       espId,
       currentDevice,
@@ -2195,7 +2252,10 @@ console.log(sensorData);
       onChartTypeChange,
       // Date change handlers for energy charts
       handleYearChange,
-      handleMonthChange
+      handleMonthChange,
+      // Fallback data functions
+      fetchLatestSensorData,
+      populateWithLastData
     }
   }
 }

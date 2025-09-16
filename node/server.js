@@ -285,6 +285,24 @@ app.get('/api/sensor-data/:espId', auth, async (req, res) => {
   }
 });
 
+// Get latest sensor data by ESP ID
+app.get('/api/sensor-data/:espId/latest', auth, async (req, res) => {
+  try {
+    const { espId } = req.params;
+    const limit = parseInt(req.query.limit) || 1; // Default to 1 for latest record
+    
+    if (!sensorService) {
+      return res.status(503).json({ error: 'Sensor service not available' });
+    }
+    
+    const data = await sensorService.getLatestData(espId, limit);
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching latest sensor data:', error);
+    res.status(500).json({ error: 'Failed to fetch latest sensor data' });
+  }
+});
+
 // Get historical sensor data by date range
 app.get('/api/sensor-data/:espId/history', auth, async (req, res) => {
   try {

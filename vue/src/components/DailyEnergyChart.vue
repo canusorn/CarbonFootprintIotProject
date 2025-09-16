@@ -121,7 +121,7 @@ export default {
 
     const totalCO2 = computed(() => {
       return props.dailyEnergyData.reduce((sum, item) => {
-        const co2 = item.co2 || calculateCO2Emissions(item.energy || 0, props.emissionFactor)
+        const co2 = item.co2 || calculateCO2Emissions(item.energy || 0)
         return sum + co2
       }, 0)
     })
