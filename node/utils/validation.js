@@ -95,7 +95,7 @@ function validateEspId(espId) {
   }
   
   // ESP ID should be alphanumeric and underscores, 3-32 characters
-  const espIdPattern = /^[a-zA-Z0-9_]{3,32}$/;
+  const espIdPattern = /^[a-zA-Z0-9_-]{3,32}$/;
   if (!espIdPattern.test(espId)) {
     return { 
       isValid: false, 
