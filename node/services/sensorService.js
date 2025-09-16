@@ -62,9 +62,9 @@ class SensorService {
           PFa DECIMAL(5,3) NOT NULL,
           PFb DECIMAL(5,3) NOT NULL,
           PFc DECIMAL(5,3) NOT NULL,
-          Eim DECIMAL(15,3) NOT NULL,
-          Eex DECIMAL(15,3) NOT NULL,
-          Ett DECIMAL(15,3) NOT NULL,
+          Ei DECIMAL(15,3) NOT NULL,
+          Ee DECIMAL(15,3) NOT NULL,
+          Et DECIMAL(15,3) NOT NULL,
           time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           INDEX idx_time (time),
@@ -101,7 +101,7 @@ class SensorService {
       console.log(`🔄 Saving power meter data for ESP: ${espId}`);
       
       // Validate required fields
-      const requiredFields = ['Va', 'Vb', 'Vc', 'Ia', 'Ib', 'Ic', 'Pa', 'Pb', 'Pc', 'PFa', 'PFb', 'PFc', 'Eim', 'Eex', 'Ett'];
+      const requiredFields = ['Va', 'Vb', 'Vc', 'Ia', 'Ib', 'Ic', 'Pa', 'Pb', 'Pc', 'PFa', 'PFb', 'PFc', 'Ei', 'Ee', 'Et'];
       for (const field of requiredFields) {
         if (data[field] === undefined || data[field] === null) {
           throw new Error(`Missing required field: ${field}`);
@@ -114,7 +114,7 @@ class SensorService {
       // Prepare insert query
       const insertQuery = `
         INSERT INTO \`${tableName}\` 
-        (Va, Vb, Vc, Ia, Ib, Ic, Pa, Pb, Pc, PFa, PFb, PFc, Eim, Eex, Ett, time)
+        (Va, Vb, Vc, Ia, Ib, Ic, Pa, Pb, Pc, PFa, PFb, PFc, Ei, Ee, Et, time)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
@@ -131,9 +131,9 @@ class SensorService {
         parseFloat(data.PFa),
         parseFloat(data.PFb),
         parseFloat(data.PFc),
-        parseFloat(data.Eim),
-        parseFloat(data.Eex),
-        parseFloat(data.Ett),
+        parseFloat(data.Ei),
+        parseFloat(data.Ee),
+        parseFloat(data.Et),
         data.time ? new Date(data.time) : new Date()
       ];
 

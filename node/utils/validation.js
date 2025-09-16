@@ -17,7 +17,7 @@ function validatePowerMeterData(data) {
     'Ia', 'Ib', 'Ic',     // Current phases A, B, C
     'Pa', 'Pb', 'Pc',     // Power phases A, B, C
     'PFa', 'PFb', 'PFc',  // Power Factor phases A, B, C
-    'Eim', 'Eex', 'Ett'   // Energy Import, Export, Total
+    'Ei', 'Ee', 'Et'   // Energy Import, Export, Total
   ];
   
   // Check if data is an object

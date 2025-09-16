@@ -406,7 +406,7 @@ export default {
       Ia: 0, Ib: 0, Ic: 0,
       Pa: 0, Pb: 0, Pc: 0,
       PFa: 0, PFb: 0, PFc: 0,
-      Eim: 0, Eex: 0, Ett: 0
+      Ei: 0, Ee: 0, Et: 0
     })
 
     const historicalData = ref([])
@@ -1237,9 +1237,9 @@ export default {
             PFa: parseFloat(latestData.PFa) || 0.85,
             PFb: parseFloat(latestData.PFb) || 0.85,
             PFc: parseFloat(latestData.PFc) || 0.85,
-            Eim: parseFloat(latestData.Eim) || 0,
-            Eex: parseFloat(latestData.Eex) || 0,
-            Ett: parseFloat(latestData.Ett) || 0
+            Ei: parseFloat(latestData.Ei) || 0,
+            Ee: parseFloat(latestData.Ee) || 0,
+            Et: parseFloat(latestData.Et) || 0
           }
           
           // Set fallback flag and update time
@@ -1805,7 +1805,7 @@ console.log(sensorData);
           record.Pa || 0, record.Pb || 0, record.Pc || 0,
           totalPower,
           record.PFa || 0, record.PFb || 0, record.PFc || 0,
-          record.Eim || 0, record.Eex || 0, record.Ett || 0,
+          record.Ei || 0, record.Ee || 0, record.Et || 0,
           co2.toFixed(4)
         ]
       })
