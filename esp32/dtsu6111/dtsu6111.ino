@@ -1,7 +1,13 @@
 #include <WiFi.h>
 #include <MQTT.h>         //mqtt by Joël Gähwiler
 #include <ModbusMaster.h> // ModbusMaster by Doc Walker
+#include <NetworkClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include <HTTPUpdateServer.h>
 
+// ตั้งชื่อสำหรับเข้าถึงผ่าน domain name
+const char *host = "esp32-device1";
 const char ssid[] = "G6PD_2.4G";
 const char pass[] = "570610193";
 const char email[] = "anusorn1998@gmail.com";
@@ -9,6 +15,7 @@ const char email[] = "anusorn1998@gmail.com";
 #define SERVER "pi.local"
 #define UPDATETIME 5 // update time in second
 
+// คอมเม้นเมื่อใช้งานต่อเซนเซอร์จริง
 // #define TESTMODE
 #define ADDRESS 1
 
@@ -22,6 +29,8 @@ const char email[] = "anusorn1998@gmail.com";
 ModbusMaster node;
 WiFiClient net;
 MQTTClient client(512);
+WebServer httpServer(80);
+HTTPUpdateServer httpUpdater;
 
 unsigned long lastMillis = 0;
 char espid[32];
@@ -44,6 +53,17 @@ void connect()
         delay(1000);
     }
 
+    if (MDNS.begin(host))
+    {
+        Serial.println("mDNS responder started");
+    }
+
+    httpUpdater.setup(&httpServer);
+    httpServer.begin();
+
+    MDNS.addService("http", "tcp", 80);
+    Serial.printf("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", host);
+
     Serial.print("\nMQTT connecting...");
     while (!client.connect(espid, email, "pi"))
     {
@@ -53,7 +73,7 @@ void connect()
 
     Serial.println("\nconnected!");
 
-    client.subscribe(String("/") + String(espid) + String("/#"));
+    client.subscribe(String(espid) + String("/#"));
 }
 
 void messageReceived(String &topic, String &payload)
@@ -86,6 +106,7 @@ void setup()
 
 void loop()
 {
+    httpServer.handleClient();
     client.loop();
     if (!client.connected())
     {
@@ -98,7 +119,7 @@ void loop()
 
         bool isCanRead = readFromMeter();
 
-        timetoupdate ++;
+        timetoupdate++;
         if (timetoupdate >= UPDATETIME && isCanRead)
         {
             timetoupdate = 0;
@@ -278,4 +299,24 @@ void disConnect()
 {
     pinMode(MAX485_RE, INPUT); /* Define RE Pin as Signal Output for RS485 converter. Output pin means Arduino command the pin signal to go high or low so that signal is received by the converter*/
     pinMode(MAX485_DE, INPUT); /* Define DE Pin as Signal Output for RS485 converter. Output pin means Arduino command the pin signal to go high or low so that signal is received by the converter*/
+}
+
+void update_started()
+{
+    Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished()
+{
+    Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total)
+{
+    Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err)
+{
+    Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
 }
