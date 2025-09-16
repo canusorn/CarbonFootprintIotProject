@@ -7,9 +7,9 @@ const char pass[] = "570610193";
 const char email[] = "anusorn1998@gmail.com";
 
 #define SERVER "pi.local"
-#define UPDATETIME 10 // update time in second
+#define UPDATETIME 5 // update time in second
 
-#define TESTMODE 1
+// #define TESTMODE
 #define ADDRESS 1
 
 #define MAX485_RO 18
@@ -92,14 +92,13 @@ void loop()
         connect();
     }
 
-    // publish a message roughly every second.
     if (millis() - lastMillis > 1000)
     {
         lastMillis = millis();
 
         bool isCanRead = readFromMeter();
 
-        timetoupdate++;
+        timetoupdate ++;
         if (timetoupdate >= UPDATETIME && isCanRead)
         {
             timetoupdate = 0;
@@ -110,75 +109,73 @@ void loop()
 
 bool readFromMeter()
 {
+
+#ifdef TESTMODE
+    var[0] = random(2000, 2500) * 0.1; // Va
+    var[1] = random(2000, 2500) * 0.1; // Vb
+    var[2] = random(2000, 2500) * 0.1; // Vc
+    var[3] = random(0, 1000) * 0.01;   // Ia
+    var[4] = random(0, 1000) * 0.01;   // Ib
+    var[5] = random(0, 1000) * 0.01;   // Ic
+
+    // power with signed
+    // int16_t power = int16_t(node.getResponseBuffer(8)); // Pa
+    var[6] = random(0, 5000) / 1000.0; // to kW
+    // power = int(node.getResponseBuffer(9));             // Pb
+    var[7] = random(0, 5000) / 1000.0; // to kW
+    // power = int(node.getResponseBuffer(10));            // Pc
+    var[8] = random(0, 5000) / 1000.0; // to kW
+
+    var[9] = random(800, 1000) * 0.001;  // PFa
+    var[10] = random(800, 1000) * 0.001; // PFb
+    var[11] = random(800, 1000) * 0.001; // PFc
+
+    var[12] = random(4980, 5020) * 0.01; // f
+
+    var[13] = 1.3; // Et
+
+    var[14] = 1.2; // Ei
+
+    var[15] = 0; // Ee
+#else
     uint8_t result;
     result = node.readInputRegisters(0x0000, 51);
     disConnect();
-    if (TESTMODE)
+    if (result == node.ku8MBSuccess) /* If there is a response */
     {
-        var[0] = random(2000, 2500) * 0.1; // Va
-        var[1] = random(2000, 2500) * 0.1; // Vb
-        var[2] = random(2000, 2500) * 0.1; // Vc
-        var[3] = random(0, 1000) * 0.01;   // Ia
-        var[4] = random(0, 1000) * 0.01;   // Ib
-        var[5] = random(0, 1000) * 0.01;   // Ic
+        var[0] = node.getResponseBuffer(0) * 0.1;  // Va
+        var[1] = node.getResponseBuffer(1) * 0.1;  // Vb
+        var[2] = node.getResponseBuffer(2) * 0.1;  // Vc
+        var[3] = node.getResponseBuffer(3) * 0.01; // Ia
+        var[4] = node.getResponseBuffer(4) * 0.01; // Ib
+        var[5] = node.getResponseBuffer(5) * 0.01; // Ic
 
         // power with signed
-        // int16_t power = int16_t(node.getResponseBuffer(8)); // Pa
-        var[6] = random(0, 5000) / 1000.0; // to kW
-        // power = int(node.getResponseBuffer(9));             // Pb
-        var[7] = random(0, 5000) / 1000.0; // to kW
-        // power = int(node.getResponseBuffer(10));            // Pc
-        var[8] = random(0, 5000) / 1000.0; // to kW
+        int16_t power = int16_t(node.getResponseBuffer(8)); // Pa
+        var[6] = power / 1000.0;                            // to kW
+        power = int(node.getResponseBuffer(9));             // Pb
+        var[7] = power / 1000.0;                            // to kW
+        power = int(node.getResponseBuffer(10));            // Pc
+        var[8] = power / 1000.0;                            // to kW
 
-        var[9] = random(800, 1000) * 0.001;  // PFa
-        var[10] = random(800, 1000) * 0.001; // PFb
-        var[11] = random(800, 1000) * 0.001; // PFc
+        var[9] = node.getResponseBuffer(20) * 0.001;  // PFa
+        var[10] = node.getResponseBuffer(21) * 0.001; // PFb
+        var[11] = node.getResponseBuffer(22) * 0.001; // PFc
 
-        var[12] = random(4980, 5020) * 0.01; // f
+        var[12] = node.getResponseBuffer(26) * 0.01; // f
 
-        var[13] = 1.2; // Et
+        var[13] = node.getResponseBuffer(30) / 100.0; // Et
 
-        var[14] = 1.2; // Ei
+        var[14] = node.getResponseBuffer(40) / 100.0; // Ei
 
-        var[15] = 0; // Ee
+        var[15] = node.getResponseBuffer(50) / 100.0; // Ee
     }
     else
     {
-        if (result == node.ku8MBSuccess) /* If there is a response */
-        {
-            var[0] = node.getResponseBuffer(0) * 0.1;  // Va
-            var[1] = node.getResponseBuffer(1) * 0.1;  // Vb
-            var[2] = node.getResponseBuffer(2) * 0.1;  // Vc
-            var[3] = node.getResponseBuffer(3) * 0.01; // Ia
-            var[4] = node.getResponseBuffer(4) * 0.01; // Ib
-            var[5] = node.getResponseBuffer(5) * 0.01; // Ic
-
-            // power with signed
-            int16_t power = int16_t(node.getResponseBuffer(8)); // Pa
-            var[6] = power / 1000.0;                            // to kW
-            power = int(node.getResponseBuffer(9));             // Pb
-            var[7] = power / 1000.0;                            // to kW
-            power = int(node.getResponseBuffer(10));            // Pc
-            var[8] = power / 1000.0;                            // to kW
-
-            var[9] = node.getResponseBuffer(20) * 0.001;  // PFa
-            var[10] = node.getResponseBuffer(21) * 0.001; // PFb
-            var[11] = node.getResponseBuffer(22) * 0.001; // PFc
-
-            var[12] = node.getResponseBuffer(26) * 0.01; // f
-
-            var[13] = node.getResponseBuffer(30) / 100.0; // Et
-
-            var[14] = node.getResponseBuffer(40) / 100.0; // Ei
-
-            var[15] = node.getResponseBuffer(50) / 100.0; // Ee
-        }
-        else
-        {
-            Serial.println("error read sensor");
-            return false;
-        }
+        Serial.println("error read sensor");
+        return false;
     }
+#endif
 
     Serial.println("Va: " + String(var[0]));
     Serial.println("Vb: " + String(var[1]));
