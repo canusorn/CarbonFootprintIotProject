@@ -273,7 +273,7 @@ class SensorService {
           LEFT JOIN (
             SELECT 
               DATE(time) as date,
-              MAX(Ett) - MIN(Ett) as daily_energy,
+              MAX(Et) - MIN(Et) as daily_energy,
               COUNT(*) as record_count
             FROM \`${tableName}\`
             WHERE DATE(time) >= '${startDate}'
@@ -327,7 +327,7 @@ class SensorService {
           LEFT JOIN (
             SELECT 
               DATE(time) as date,
-              MAX(Ett) - MIN(Ett) as daily_energy,
+              MAX(Et) - MIN(Et) as daily_energy,
               COUNT(*) as record_count
             FROM \`${tableName}\`
             WHERE time >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
@@ -403,11 +403,11 @@ class SensorService {
     try {
       console.log(`🔄 Fetching today's energy data for ESP: ${espId}`);
       
-      // Get first and last Ett values of today to calculate today's energy consumption
+      // Get first and last Et values of today to calculate today's energy consumption
       const query = `
         SELECT 
-          MIN(Ett) as start_energy,
-          MAX(Ett) as end_energy,
+          MIN(Et) as start_energy,
+          MAX(Et) as end_energy,
           COUNT(*) as record_count,
           MIN(time) as start_time,
           MAX(time) as end_time
@@ -580,7 +580,7 @@ class SensorService {
             SELECT 
               DATE(time) as date,
               CASE 
-                WHEN COUNT(*) > 1 THEN MAX(Ett) - MIN(Ett)
+                WHEN COUNT(*) > 1 THEN MAX(Et) - MIN(Et)
                 ELSE 0
               END as daily_energy,
               COUNT(*) as record_count

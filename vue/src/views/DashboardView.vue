@@ -53,7 +53,7 @@
               <h3>Energy and CO2 Emissions</h3>
               <div class="card-item blue">
                 <h5>Total Energy</h5>
-                <span class="value">{{ sensorData.Ett.toFixed(2) }} kWh</span>
+                <span class="value">{{ sensorData.Et.toFixed(2) }} kWh</span>
               </div>
               <div class="card-item orange">
                 <h5>Total CO2 Emissions</h5>
@@ -448,7 +448,7 @@ export default {
     })
 
     const totalCO2 = computed(() => {
-      const energyValue = parseFloat(sensorData.value.Ett) || 0
+      const energyValue = parseFloat(sensorData.value.Et) || 0
       return calculateCO2Emissions(energyValue)
     })
 
@@ -496,7 +496,7 @@ export default {
 
     // Pie chart data for Energy vs CO2 visualization
     const energyVsCO2ChartData = computed(() => {
-      const energyTotal = parseFloat(sensorData.value.Ett) || 0
+      const energyTotal = parseFloat(sensorData.value.Et) || 0
       const co2Total = totalCO2.value || 0
       
       return {
@@ -604,8 +604,8 @@ export default {
               }
 
               // Update today's energy calculation when new MQTT data arrives
-              if (data.Ett !== undefined && todayEnergyData.value.startEnergy > 0) {
-                const currentEnergy = parseFloat(data.Ett)
+              if (data.Et !== undefined && todayEnergyData.value.startEnergy > 0) {
+                const currentEnergy = parseFloat(data.Et)
                 const calculatedTodayEnergy = currentEnergy - todayEnergyData.value.startEnergy
 
                 // Update today's energy data
@@ -1282,7 +1282,7 @@ console.log(sensorData);
           PFa: lastRecord.PFa || 0.85,
           PFb: lastRecord.PFb || 0.85,
           PFc: lastRecord.PFc || 0.85,
-          Ett: todayEnergyData.value.endEnergy || 0
+          Et: todayEnergyData.value.endEnergy || 0
         }
       }
     }
@@ -1440,7 +1440,7 @@ console.log(sensorData);
       if (!historicalData.value || historicalData.value.length === 0) return 0
       const firstRecord = historicalData.value[0]
       const lastRecord = historicalData.value[historicalData.value.length - 1]
-      return Math.max(0, (lastRecord.Ett || 0) - (firstRecord.Ett || 0))
+      return Math.max(0, (lastRecord.Et || 0) - (firstRecord.Et || 0))
     })
 
     const historicalTotalCO2 = computed(() => {
@@ -1600,7 +1600,7 @@ console.log(sensorData);
       const sortedData = [...historicalData.value].sort((a, b) => new Date(a.time) - new Date(b.time))
 
       let cumulativeCO2 = 0
-      const baseEnergy = sortedData.length > 0 ? (parseFloat(sortedData[0].Ett) || 0) : 0
+      const baseEnergy = sortedData.length > 0 ? (parseFloat(sortedData[0].Et) || 0) : 0
 
       sortedData.forEach((record, index) => {
         const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
@@ -1617,7 +1617,7 @@ console.log(sensorData);
         const co2FromPower = calculateCO2Emissions(powerInKW)
 
         // 3. Total Energy (kWh)
-        const energyValue = parseFloat(record.Ett) || 0
+        const energyValue = parseFloat(record.Et) || 0
         const totalEnergy = energyValue - baseEnergy
 
         // 4. Cumulative CO2 from Energy (kg)
@@ -1795,7 +1795,7 @@ console.log(sensorData);
         const Pb = parseFloat(record.Pb) || 0
         const Pc = parseFloat(record.Pc) || 0
         const totalPower = Pa + Pb + Pc
-        const energyValue = parseFloat(record.Ett) || 0
+        const energyValue = parseFloat(record.Et) || 0
         const co2 = calculateCO2Emissions(energyValue)
 
         return [
@@ -2014,7 +2014,7 @@ console.log(sensorData);
       } else if (comprehensiveChartType.value === 'energy') {
         const ettData = []
         sortedData.forEach(record => {
-          ettData.push(parseFloat(record.Ett) || 0)
+          ettData.push(parseFloat(record.Et) || 0)
         })
         seriesData.push(timestamps, ettData)
         seriesConfig.push(
@@ -2049,7 +2049,7 @@ console.log(sensorData);
           pfbData.push(parseFloat(record.PFb) || 0)
           pfcData.push(parseFloat(record.PFc) || 0)
           // Energy Total
-          ettData.push(parseFloat(record.Ett) || 0)
+          ettData.push(parseFloat(record.Et) || 0)
         })
 
         seriesData.push(timestamps, vaData, vbData, vcData, iaData, ibData, icData, paData, pbData, pcData, pfaData, pfbData, pfcData, ettData)
@@ -2072,7 +2072,7 @@ console.log(sensorData);
           { label: 'PFb', stroke: '#27ae60', width: 2, scale: 'pf' },
           { label: 'PFc', stroke: '#229954', width: 2, scale: 'pf' },
           // Energy Total
-          { label: 'Ett (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
+          { label: 'Et (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
         )
 
         scales.voltage = { auto: true }

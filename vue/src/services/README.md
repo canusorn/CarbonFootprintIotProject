@@ -245,7 +245,7 @@ import {
 
 // Use in computed properties
 const totalCO2 = computed(() => {
-  return calculateCO2Emissions(sensorData.value.Ett || 0, EMISSION_FACTORS.THAILAND)
+  return calculateCO2Emissions(sensorData.value.Et || 0, EMISSION_FACTORS.THAILAND)
 })
 
 const phaseCO2Data = computed(() => {
