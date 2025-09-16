@@ -43,6 +43,7 @@ String keyname[numVariables] = {
     "PFa", "PFb", "PFc", "f",
     "Et", "Ei", "Ee"};
 uint8_t timetoupdate = 0;
+uint8_t checkSubscribe = 0;
 
 void connect()
 {
@@ -79,11 +80,7 @@ void connect()
 void messageReceived(String &topic, String &payload)
 {
     Serial.println("incoming: " + topic + " - " + payload);
-
-    // Note: Do not use the client in the callback to publish, subscribe or
-    // unsubscribe as it may cause deadlocks when other things arrive while
-    // sending and receiving acknowledgments. Instead, change a global variable,
-    // or push to a queue and handle it in the loop after calling `client.loop()`.
+    checkSubscribe = 0;
 }
 
 void setup()
@@ -123,7 +120,14 @@ void loop()
         if (timetoupdate >= UPDATETIME && isCanRead)
         {
             timetoupdate = 0;
+
             updateParameter();
+
+            checkSubscribe++;
+            if (checkSubscribe >= 10)
+            {
+                client.subscribe(String(espid) + String("/#"));
+            }
         }
     }
 }
