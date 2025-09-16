@@ -18,9 +18,10 @@ const char email[] = "anusorn1998@gmail.com";
 #define MAX485_DI 21
 
 #define RS485Serial Serial1
+
 ModbusMaster node;
 WiFiClient net;
-MQTTClient client;
+MQTTClient client(512);
 
 unsigned long lastMillis = 0;
 char espid[32];
