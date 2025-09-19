@@ -87,12 +87,68 @@ let sensorService = null;
 let deviceService = null;
 
 // MQTT Broker Events
+// Track connected ESP devices
+const connectedESPDevices = new Map();
+
 aedes.on('client', (client) => {
   console.log(`MQTT Client connected: ${client.id}`);
+  
+  // Check if this is an ESP device (not a web client)
+  if (client.id && !client.id.startsWith('WEB')) {
+    // Validate ESP ID
+    const espIdValidation = validateEspId(client.id);
+    if (espIdValidation.isValid) {
+      connectedESPDevices.set(client.id, {
+        connectedAt: new Date(),
+        lastSeen: new Date()
+      });
+      
+      console.log(`✅ ESP Device ${client.id} connected`);
+      
+      // Publish device online status to web clients
+      const statusMessage = JSON.stringify({
+        espId: client.id,
+        status: 'online',
+        timestamp: new Date().toISOString()
+      });
+      
+      aedes.publish({
+        topic: `device/${client.id}/status`,
+        payload: statusMessage,
+        qos: 0,
+        retain: false
+      });
+      
+      console.log(`📤 Published online status for ESP ${client.id}`);
+    }
+  }
 });
 
 aedes.on('clientDisconnect', (client) => {
   console.log(`MQTT Client disconnected: ${client.id}`);
+  
+  // Check if this was an ESP device
+  if (client.id && connectedESPDevices.has(client.id)) {
+    connectedESPDevices.delete(client.id);
+    
+    console.log(`❌ ESP Device ${client.id} disconnected`);
+    
+    // Publish device offline status to web clients
+    const statusMessage = JSON.stringify({
+      espId: client.id,
+      status: 'offline',
+      timestamp: new Date().toISOString()
+    });
+    
+    aedes.publish({
+      topic: `device/${client.id}/status`,
+      payload: statusMessage,
+      qos: 0,
+      retain: false
+    });
+    
+    console.log(`📤 Published offline status for ESP ${client.id}`);
+  }
 });
 
 aedes.authenticate = (client, username, password, callback) => {
@@ -401,6 +457,19 @@ app.get('/api/monthly-energy/:espId', auth, async (req, res) => {
     return deviceRoutes.getMonthlyEnergyData(req, res);
   }
   res.status(503).json({ error: 'Monthly energy service not available' });
+});
+
+// Add API endpoint to get current ESP device status
+app.get('/api/devices/:espid/status', auth, (req, res) => {
+  const espId = req.params.espid;
+  const isOnline = connectedESPDevices.has(espId);
+  
+  res.json({
+    espId: espId,
+    status: isOnline ? 'online' : 'offline',
+    connectedAt: isOnline ? connectedESPDevices.get(espId).connectedAt : null,
+    lastSeen: isOnline ? connectedESPDevices.get(espId).lastSeen : null
+  });
 });
 
 // Control device endpoint

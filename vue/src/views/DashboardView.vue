@@ -451,8 +451,9 @@ export default {
 
     // Device control state
     const deviceState = ref({
-      isOnline: Math.random() > 0.5, // Random initial state for demo
-      isControlling: false
+      isOnline: false, // Will be updated from ESP device status
+      isControlling: false,
+      espConnected: false // Track ESP device connection to MQTT broker
     })
 
     // Device control function
@@ -609,15 +610,27 @@ export default {
     }
 
     const connectionStatus = computed(() => {
-      return isConnected.value ? 'Connected' : 'Disconnected'
+      if (deviceState.value.espConnected) {
+        return 'ESP Connected'
+      } else {
+        return isConnected.value ? 'Web Connected (ESP Offline)' : 'Disconnected'
+      }
     })
 
     const connectionStatusIcon = computed(() => {
-      return isConnected.value ? 'pi pi-check-circle' : 'pi pi-times-circle'
+      if (deviceState.value.espConnected) {
+        return 'pi pi-check-circle'
+      } else {
+        return isConnected.value ? 'pi pi-exclamation-triangle' : 'pi pi-times-circle'
+      }
     })
 
     const connectionStatusColor = computed(() => {
-      return isConnected.value ? '#4CAF50' : '#F44336'
+      if (deviceState.value.espConnected) {
+        return '#4CAF50' // Green for ESP connected
+      } else {
+        return isConnected.value ? '#FF9800' : '#F44336' // Orange for web only, red for disconnected
+      }
     })
 
 
@@ -649,6 +662,18 @@ export default {
               console.log(`Subscribed to ${espId.value}/#`)
             }
           })
+          
+          // Subscribe to device status updates
+          mqttClient.value.subscribe(`device/${espId.value}/status`, (err) => {
+            if (err) {
+              console.error('Device status subscribe error:', err)
+            } else {
+              console.log(`Subscribed to device/${espId.value}/status`)
+            }
+          })
+          
+          // Fetch initial ESP device status
+          fetchESPDeviceStatus()
         })
 
         mqttClient.value.on('message', (topic, message) => {
@@ -744,6 +769,15 @@ export default {
                 deviceState.value.isControlling = false
                 console.log('Device confirmed OFF status')
               }
+            }
+            // Handle ESP device connection status messages
+            else if (topic === `device/${espId.value}/status`) {
+              const statusData = JSON.parse(message.toString())
+              console.log('Received ESP device status:', statusData)
+              
+              // Update ESP connection status
+              deviceState.value.espConnected = statusData.status === 'online'
+              console.log(`ESP device ${espId.value} is ${statusData.status}`)
             }
           } catch (error) {
             console.error('Error parsing MQTT message:', error)
@@ -2247,6 +2281,30 @@ console.log(sensorData);
       } catch (error) {
         console.error('Error fetching daily energy data for month', month, ':', error)
         dailyEnergyData.value = []
+      }
+    }
+
+    // Fetch ESP device status from backend
+    const fetchESPDeviceStatus = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await fetch(`http://${import.meta.env.VITE_HOSTURL}:3000/api/devices/${espId.value}/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        if (response.ok) {
+          const statusData = await response.json()
+          deviceState.value.espConnected = statusData.status === 'online'
+          console.log(`Initial ESP device status: ${statusData.status}`)
+        } else {
+          console.warn('Failed to fetch ESP device status')
+          deviceState.value.espConnected = false
+        }
+      } catch (error) {
+        console.error('Error fetching ESP device status:', error)
+        deviceState.value.espConnected = false
       }
     }
 
