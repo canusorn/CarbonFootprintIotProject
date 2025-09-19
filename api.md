@@ -219,11 +219,78 @@ Authorization: Bearer <your-jwt-token>
   - `404 Not Found`: Device not found
   - `503 Service Unavailable`: Device service not available
 
+### 8. Control Device
+- **Method**: `POST`
+- **Path**: `/api/devices/:id/control`
+- **Authentication**: Private (JWT token required)
+- **Description**: Send control command to ESP device (ON/OFF)
+- **Path Parameters**:
+  - `id`: ESP device ID (e.g., "ESP001")
+- **Headers**:
+  ```
+  Authorization: Bearer <jwt-token>
+  ```
+- **Request Body**:
+  ```json
+  {
+    "command": "ON"
+  }
+  ```
+- **Response** (200 OK):
+  ```json
+  {
+    "success": true,
+    "message": "Control command sent successfully",
+    "command": "ON",
+    "espId": "ESP001"
+  }
+  ```
+- **Error Responses**:
+  - `400 Bad Request`: Invalid command (must be "ON" or "OFF")
+  - `401 Unauthorized`: No token or invalid token
+  - `403 Forbidden`: Access denied (device belongs to another user)
+  - `404 Not Found`: Device not found
+  - `500 Internal Server Error`: Failed to send control command
+  - `503 Service Unavailable`: Device service not available
+
+### 9. Get ESP Device Connection Status
+- **Method**: `GET`
+- **Path**: `/api/devices/:espid/status`
+- **Authentication**: Private (JWT token required)
+- **Description**: Get current MQTT connection status of ESP device
+- **Path Parameters**:
+  - `espid`: ESP device ID (e.g., "ESP001")
+- **Headers**:
+  ```
+  Authorization: Bearer <jwt-token>
+  ```
+- **Response** (200 OK - Device Online):
+  ```json
+  {
+    "espId": "ESP001",
+    "status": "online",
+    "connectedAt": "2024-01-01T12:00:00.000Z",
+    "lastSeen": "2024-01-01T12:05:00.000Z"
+  }
+  ```
+- **Response** (200 OK - Device Offline):
+  ```json
+  {
+    "espId": "ESP001",
+    "status": "offline",
+    "connectedAt": null,
+    "lastSeen": null
+  }
+  ```
+- **Error Responses**:
+  - `401 Unauthorized`: No token or invalid token
+  - `500 Internal Server Error`: Failed to check device status
+
 ---
 
 ## Sensor Data Endpoints
 
-### 8. Get Sensor Data
+### 10. Get Sensor Data
 - **Method**: `GET`
 - **Path**: `/api/sensor-data`
 - **Authentication**: Public (No authentication required)
@@ -250,7 +317,7 @@ Authorization: Bearer <your-jwt-token>
   - `400 Bad Request`: ESP ID is required
   - `503 Service Unavailable`: Sensor service not available
 
-### 9. Get Sensor Data by ESP ID
+### 11. Get Sensor Data by ESP ID
 - **Method**: `GET`
 - **Path**: `/api/sensor-data/:espId`
 - **Authentication**: Private (JWT token required)
@@ -281,7 +348,7 @@ Authorization: Bearer <your-jwt-token>
   - `500 Internal Server Error`: Failed to fetch sensor data
   - `503 Service Unavailable`: Sensor service not available
 
-### 10. Get Latest Sensor Data
+### 12. Get Latest Sensor Data
 - **Method**: `GET`
 - **Path**: `/api/sensor-data/:espId/latest`
 - **Authentication**: Private (JWT token required)
@@ -314,7 +381,7 @@ Authorization: Bearer <your-jwt-token>
   - `500 Internal Server Error`: Failed to fetch latest sensor data
   - `503 Service Unavailable`: Sensor service not available
 
-### 11. Get Historical Sensor Data by Date Range
+### 13. Get Historical Sensor Data by Date Range
 - **Method**: `GET`
 - **Path**: `/api/sensor-data/:espId/history`
 - **Authentication**: Private (JWT token required)
@@ -353,7 +420,7 @@ Authorization: Bearer <your-jwt-token>
 
 ## Energy Data Endpoints
 
-### 12. Get Daily Energy Data
+### 14. Get Daily Energy Data
 - **Method**: `GET`
 - **Path**: `/api/daily-energy/:espId`
 - **Authentication**: Private (JWT token required)
@@ -385,7 +452,7 @@ Authorization: Bearer <your-jwt-token>
   - `500 Internal Server Error`: Failed to retrieve daily energy data
   - `503 Service Unavailable`: Daily energy service not available
 
-### 13. Get Today's Energy Data
+### 15. Get Today's Energy Data
 - **Method**: `GET`
 - **Path**: `/api/today-energy/:espId`
 - **Authentication**: Private (JWT token required)
@@ -413,7 +480,7 @@ Authorization: Bearer <your-jwt-token>
   - `500 Internal Server Error`: Failed to retrieve today energy data
   - `503 Service Unavailable`: Today energy service not available
 
-### 14. Get Today's Power Data
+### 16. Get Today's Power Data
 - **Method**: `GET`
 - **Path**: `/api/today-power/:espId`
 - **Authentication**: Private (JWT token required)
@@ -443,7 +510,7 @@ Authorization: Bearer <your-jwt-token>
   - `500 Internal Server Error`: Failed to retrieve today power data
   - `503 Service Unavailable`: Today power service not available
 
-### 15. Get Monthly Energy Data
+### 17. Get Monthly Energy Data
 - **Method**: `GET`
 - **Path**: `/api/monthly-energy/:espId`
 - **Authentication**: Private (JWT token required)
