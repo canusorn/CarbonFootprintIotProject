@@ -4,11 +4,11 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <HTTPUpdateServer.h>
+#include <Wire.h>             // Wire library for I2C communication
 
 #include <MQTT.h>         //mqtt by Joël Gähwiler
 #include <ModbusMaster.h> // ModbusMaster by Doc Walker
 
-#include <Wire.h>             // Wire library for I2C communication
 #include <Adafruit_SSD1306.h> // Adafruit SSD1306 library by Adafruit
 #include <Adafruit_GFX.h>     // Adafruit GFX library by Adafruit
 
