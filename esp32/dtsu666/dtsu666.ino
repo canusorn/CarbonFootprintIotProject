@@ -19,7 +19,11 @@ const char pass[] = "570610193";
 const char email[] = "anusorn1998@gmail.com";
 
 #define SERVER "pi.local"
+// #define SERVER "192.168.1.221"
 #define UPDATETIME 5  // update time in second
+
+// pin ที่สั่ง on off
+#define CONTROLPIN 15
 
 // คอมเม้นเมื่อใช้งานต่อเซนเซอร์จริง
 // #define TESTMODE
@@ -81,13 +85,44 @@ void connect() {
   Serial.println("\nconnected!");
 
   client.subscribe(String(espid) + String("/#"));
+  client.subscribe("control/" + String(espid));
 }
 
 void messageReceived(String &topic, String &payload) {
-  // Serial.println("incoming: " + topic + " - " + payload);
+  Serial.println("incoming: " + topic + " - " + payload);
   checkSubscribe = 0;
+  
   if (topic == String(espid) + String("/update")) {
     Serial.println("publish success");
+  }
+  else if (topic == String(espid) + "/control") {
+    Serial.println("Control command received: " + payload);
+    
+    // Parse JSON payload
+    // Expected format: {"command":"ON","timestamp":"...","user":"..."}
+    if (payload.indexOf("\"command\":\"ON\"") != -1) {
+      Serial.println("Turning device ON");
+      // Add your device ON logic here
+      // For example: digitalWrite(RELAY_PIN, HIGH);
+      digitalWrite(CONTROLPIN, HIGH);
+
+      // Send confirmation back
+      String confirmTopic = String(espid) + "/confirm";
+      client.publish(confirmTopic, "{\"status\":\"ON\",\"timestamp\":\"" + String(millis()) + "\"}");
+    }
+    else if (payload.indexOf("\"command\":\"OFF\"") != -1) {
+      Serial.println("Turning device OFF");
+      // Add your device OFF logic here
+      // For example: digitalWrite(RELAY_PIN, LOW);
+      digitalWrite(CONTROLPIN, LOW);
+      
+      // Send confirmation back
+      String confirmTopic = String(espid) + "/confirm";
+      client.publish(confirmTopic, "{\"status\":\"OFF\",\"timestamp\":\"" + String(millis()) + "\"}");
+    }
+    else {
+      Serial.println("Unknown control command");
+    }
   }
 }
 
@@ -95,6 +130,10 @@ void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, pass);
   RS485Serial.begin(9600, SERIAL_8N1, MAX485_RO, MAX485_DI);  // serial สำหรับติดต่อกับ MAX485
+
+  // Set control pin as output
+  pinMode(CONTROLPIN, OUTPUT);
+  digitalWrite(CONTROLPIN, LOW);
 
   //------Display LOGO at start------
   oled.begin(SSD1306_SWITCHCAPVCC, 0x3C);

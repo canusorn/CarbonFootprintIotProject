@@ -220,6 +220,52 @@ aedes.on('publish', async (packet, client) => {
       }
     }
 
+    // Handle /confirm topic for ESP device status confirmations
+    else if (packet.topic.endsWith('/confirm')) {
+      try {
+        const statusData = JSON.parse(packet.payload.toString());
+        
+        // Extract ESP ID from topic (format: espid/confirm)
+        const espId = packet.topic.replace('/confirm', '');
+        
+        // Validate ESP ID
+        const espIdValidation = validateEspId(espId);
+        if (!espIdValidation.isValid) {
+          console.error(`❌ Invalid ESP ID in /confirm message: ${espIdValidation.error}`);
+          return;
+        }
+
+        // Validate status data
+        if (!statusData || typeof statusData.status !== 'string') {
+          console.error(`❌ Invalid status data for ESP ${espId}: missing or invalid status field`);
+          return;
+        }
+
+        const status = statusData.status.toUpperCase();
+        if (!['ON', 'OFF'].includes(status)) {
+          console.error(`❌ Invalid status value for ESP ${espId}: ${status}. Must be ON or OFF`);
+          return;
+        }
+
+        // Save device status to database if device service is available
+        if (deviceService) {
+          try {
+            const result = await deviceService.updateDeviceStatus(espId, status);
+            console.log(`✅ Device status updated for ESP ${espId}: ${status}`);
+            console.log(`   Database update result:`, result);
+          } catch (dbError) {
+            console.error(`❌ Failed to update device status for ESP ${espId}:`, dbError.message);
+          }
+        } else {
+          console.log(`⚠️ Device service not available, cannot save status for ESP ${espId}`);
+        }
+
+      } catch (error) {
+        console.error('❌ Failed to parse /confirm message:', error.message);
+        console.error('❌ Raw message:', packet.payload.toString());
+      }
+    }
+
     // Store sensor data when published to other sensor topics
     else if (packet.topic.startsWith('sensor/')) {
       try {
@@ -355,6 +401,14 @@ app.get('/api/monthly-energy/:espId', auth, async (req, res) => {
     return deviceRoutes.getMonthlyEnergyData(req, res);
   }
   res.status(503).json({ error: 'Monthly energy service not available' });
+});
+
+// Control device endpoint
+app.post('/api/devices/:espid/control', (req, res) => {
+  if (deviceRoutes && deviceRoutes.controlDevice) {
+    return deviceRoutes.controlDevice(req, res);
+  }
+  res.status(503).json({ error: 'Device control service not available' });
 });
 
 // Initialize database and start servers

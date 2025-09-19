@@ -280,6 +280,86 @@ const createDeviceRoutes = (deviceService, sensorService) => {
         console.error('Error retrieving monthly energy data:', error.message);
         res.status(500).json({ error: 'Failed to retrieve monthly energy data' });
       }
+    },
+
+    // Control device (turn on/off)
+    controlDevice: async (req, res) => {
+      try {
+        // Get token from header
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        
+        if (!token) {
+          return res.status(401).json({ error: 'No token, authorization denied' });
+        }
+
+        // Verify token
+        const jwt = require('jsonwebtoken');
+        const { JWT_SECRET } = require('../middleware/auth');
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        const userEmail = decoded.email;
+        const espId = req.params.espid;
+        const { command } = req.body;
+        
+        // Validate command
+        if (!command || !['ON', 'OFF'].includes(command.toUpperCase())) {
+          return res.status(400).json({ error: 'Invalid command. Must be ON or OFF' });
+        }
+        
+        // Check if device service is available
+        if (!deviceService) {
+          return res.status(503).json({ error: 'Device service not available. Please check database connection.' });
+        }
+        
+        // Get device by ESP ID to verify ownership
+        const device = await deviceService.getDevice(espId);
+        
+        if (!device) {
+          return res.status(404).json({ error: 'Device not found' });
+        }
+        
+        // Ensure user can only control their own devices
+        if (device.username !== userEmail) {
+          return res.status(403).json({ error: 'Access denied: You can only control your own devices' });
+        }
+        
+        // Publish MQTT command to device
+        const aedes = require('../server').aedes;
+        const controlTopic = `${espId}/control`;
+        const commandMessage = {
+          command: command.toUpperCase(),
+          timestamp: new Date().toISOString(),
+          user: userEmail
+        };
+        
+        // Publish the control command via MQTT
+        aedes.publish({
+          topic: controlTopic,
+          payload: JSON.stringify(commandMessage),
+          qos: 1,
+          retain: false
+        }, (error) => {
+          if (error) {
+            console.error('Error publishing MQTT control command:', error);
+          } else {
+            console.log(`✅ Control command sent to ${espId}: ${command}`);
+          }
+        });
+        
+        res.json({ 
+          success: true, 
+          message: `Command ${command} sent to device ${espId}`,
+          device: device.name,
+          command: command.toUpperCase()
+        });
+        
+      } catch (error) {
+        console.error('Error controlling device:', error.message);
+        if (error.name === 'JsonWebTokenError') {
+          return res.status(401).json({ error: 'Invalid token' });
+        }
+        res.status(500).json({ error: 'Failed to control device' });
+      }
     }
   };
 };

@@ -48,6 +48,8 @@ class DeviceService {
           espid VARCHAR(50) UNIQUE NOT NULL,
           name VARCHAR(255) NOT NULL,
           username VARCHAR(255) NOT NULL,
+          status ENUM('ON', 'OFF') DEFAULT 'OFF',
+          last_status_update TIMESTAMP NULL,
           date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -227,6 +229,59 @@ class DeviceService {
     }
   }
 
+  async updateDeviceStatus(espId, status) {
+    try {
+      console.log(`🔄 Updating device status for ESP ID: ${espId} to: ${status}`);
+      
+      if (!this.connection) {
+        throw new Error('Device service not initialized');
+      }
+
+      // Validate status
+      if (!['ON', 'OFF'].includes(status)) {
+        throw new Error(`Invalid status: ${status}. Must be ON or OFF`);
+      }
+      
+      // Update device status and timestamp
+      const updateQuery = `
+        UPDATE device 
+        SET status = ?, last_status_update = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+        WHERE espid = ?
+      `;
+      
+      const [result] = await this.connection.execute(updateQuery, [status, espId]);
+      
+      if (result.affectedRows === 0) {
+        console.log(`⚠️ Device with ESP ID ${espId} not found, creating new device entry`);
+        // If device doesn't exist, create it with the status
+        await this.saveDevice(espId, espId, 'unknown');
+        // Try updating again
+        const [retryResult] = await this.connection.execute(updateQuery, [status, espId]);
+        console.log(`✅ Device status updated successfully for ESP ID: ${espId} (retry)`);
+        return {
+          success: true,
+          espId,
+          status,
+          affectedRows: retryResult.affectedRows
+        };
+      }
+      
+      console.log(`✅ Device status updated successfully for ESP ID: ${espId}`);
+      console.log(`   Affected rows: ${result.affectedRows}`);
+      
+      return {
+        success: true,
+        espId,
+        status,
+        affectedRows: result.affectedRows
+      };
+      
+    } catch (error) {
+      console.error(`❌ Failed to update device status for ESP ID: ${espId}`);
+      console.error(`   Error: ${error.message}`);
+      throw error;
+    }
+  }
   async saveEspDevice(espId, name, username) {
     try {
       console.log(`🔄 Saving ESP device: ${espId}`);

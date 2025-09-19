@@ -44,6 +44,15 @@
             <div class="status-card">
               <i :class="connectionStatusIcon" :style="{ color: connectionStatusColor }"></i>
               <span>{{ connectionStatus }}</span>
+              <!-- Device Control Button -->
+              <button 
+                @click="toggleDevice" 
+                :class="['control-btn', deviceState.isOnline ? 'online' : 'offline']"
+                :disabled="deviceState.isControlling"
+              >
+                <i :class="deviceState.isOnline ? 'pi pi-power-off' : 'pi pi-play'"></i>
+                {{ deviceState.isControlling ? 'Controlling...' : (deviceState.isOnline ? 'Turn Off' : 'Turn On') }}
+              </button>
             </div>
           </div>
 
@@ -69,6 +78,7 @@
                   />
                 </div>
               </div>
+
             </div>
           </div>
 
@@ -439,6 +449,59 @@ export default {
     // User account management
     const userEmail = ref('')
 
+    // Device control state
+    const deviceState = ref({
+      isOnline: Math.random() > 0.5, // Random initial state for demo
+      isControlling: false
+    })
+
+    // Device control function
+    const toggleDevice = async () => {
+      // Check if device is connected before allowing control
+      if (!isConnected.value) {
+        alert('Cannot control device: Device is not connected')
+        return
+      }
+
+      try {
+        deviceState.value.isControlling = true
+        
+        const token = localStorage.getItem('token')
+        const command = deviceState.value.isOnline ? 'OFF' : 'ON'
+        
+        // Send control command to backend
+        await axios.post(
+          `${import.meta.env.VITE_SERVERURL}/api/devices/${espId.value}/control`,
+          { command },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+        
+        // Don't immediately toggle the state - wait for device confirmation via MQTT
+        // The state will be updated when we receive the status confirmation message
+        
+        console.log(`Control command ${command} sent to device ${currentDevice.value.name}`)
+        
+        // Set a timeout to reset controlling state if no confirmation received
+        setTimeout(() => {
+          if (deviceState.value.isControlling) {
+            deviceState.value.isControlling = false
+            console.log('Device control timeout - no confirmation received')
+            alert('Device control timeout: No confirmation received from device')
+          }
+        }, 10000) // 10 second timeout
+        
+      } catch (err) {
+        console.error('Error controlling device:', err)
+        alert(`Failed to control device: ${err.response?.data?.error || 'Unknown error'}`)
+        deviceState.value.isControlling = false
+      }
+    }
+
     // Computed properties
     const totalPower = computed(() => {
       const Pa = parseFloat(sensorData.value.Pa) || 0
@@ -665,6 +728,22 @@ export default {
 
               console.log('Received sensor data:', data)
               console.log('Updated today energy:', todayEnergyData.value.todayEnergy)
+            }
+            // Handle device status confirmation messages
+            else if (topic === `${espId.value}/confirm`) {
+              const statusData = JSON.parse(message.toString())
+              console.log('Received device status confirmation:', statusData)
+              
+              // Update device state based on confirmation
+              if (statusData.status === 'ON') {
+                deviceState.value.isOnline = true
+                deviceState.value.isControlling = false
+                console.log('Device confirmed ON status')
+              } else if (statusData.status === 'OFF') {
+                deviceState.value.isOnline = false
+                deviceState.value.isControlling = false
+                console.log('Device confirmed OFF status')
+              }
             }
           } catch (error) {
             console.error('Error parsing MQTT message:', error)
@@ -2222,6 +2301,9 @@ console.log(sensorData);
       userEmail,
       logout,
       router,
+      // Device control
+      deviceState,
+      toggleDevice,
       // History tab
       startDate,
       endDate,
@@ -2421,6 +2503,7 @@ console.log(sensorData);
 .status-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 10px 15px;
   background: #f8f9fa;
@@ -2430,6 +2513,14 @@ console.log(sensorData);
 
 .status-card i {
   font-size: 1.2rem;
+}
+
+.status-card .control-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  min-width: 100px;
 }
 
 .data-cards-grid {
@@ -3757,6 +3848,70 @@ console.log(sensorData);
   .right-column .chart-wrapper canvas {
     max-height: 250px !important;
     max-width: 250px !important;
+  }
+}
+
+/* Device Control Section */
+.device-control-section {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  min-width: 140px;
+}
+
+.control-btn.online {
+  background-color: #f44336;
+  color: white;
+}
+
+.control-btn.online:hover:not(:disabled) {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+}
+
+.control-btn.offline {
+  background-color: #2196F3;
+  color: white;
+}
+
+.control-btn.offline:hover:not(:disabled) {
+  background-color: #1976D2;
+  transform: translateY(-1px);
+}
+
+.control-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.control-btn i {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .device-control-section {
+    margin-top: 10px;
+  }
+  
+  .control-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+    min-width: 120px;
   }
 }
 
