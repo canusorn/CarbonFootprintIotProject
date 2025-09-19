@@ -5,22 +5,22 @@
 #include <ESPmDNS.h>
 #include <HTTPUpdateServer.h>
 
-#include <MQTT.h>          //mqtt by Joël Gähwiler
-#include <ModbusMaster.h>  // ModbusMaster by Doc Walker
+#include <MQTT.h>         //mqtt by Joël Gähwiler
+#include <ModbusMaster.h> // ModbusMaster by Doc Walker
 
-#include <Wire.h>              // Wire library for I2C communication
-#include <Adafruit_SSD1306.h>  // Adafruit SSD1306 library by Adafruit
-#include <Adafruit_GFX.h>      // Adafruit GFX library by Adafruit
+#include <Wire.h>             // Wire library for I2C communication
+#include <Adafruit_SSD1306.h> // Adafruit SSD1306 library by Adafruit
+#include <Adafruit_GFX.h>     // Adafruit GFX library by Adafruit
 
 // ตั้งชื่อสำหรับเข้าถึงผ่าน domain name
-const char *host = "esp32-device1";
+const char *host = "esp32-1";
 const char ssid[] = "G6PD_2.4G";
 const char pass[] = "570610193";
 const char email[] = "anusorn1998@gmail.com";
 
 #define SERVER "pi.local"
 // #define SERVER "192.168.1.221"
-#define UPDATETIME 5  // update time in second
+#define UPDATETIME 5 // update time in second
 
 // pin ที่สั่ง on off
 #define CONTROLPIN 15
@@ -50,23 +50,25 @@ char espid[32];
 float varfloat[16];
 const uint8_t numVariables = 16;
 String keyname[numVariables] = {
-  "Va", "Vb", "Vc",
-  "Ia", "Ib", "Ic",
-  "Pa", "Pb", "Pc",
-  "PFa", "PFb", "PFc", "f",
-  "Et", "Ei", "Ee"
-};
+    "Va", "Vb", "Vc",
+    "Ia", "Ib", "Ic",
+    "Pa", "Pb", "Pc",
+    "PFa", "PFb", "PFc", "f",
+    "Et", "Ei", "Ee"};
 uint8_t timetoupdate = 0;
 uint8_t checkSubscribe = 0;
 
-void connect() {
+void connect()
+{
   Serial.print("checking wifi...");
-  while (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED)
+  {
     Serial.print(".");
     delay(1000);
   }
 
-  if (MDNS.begin(host)) {
+  if (MDNS.begin(host))
+  {
     Serial.println("mDNS responder started");
   }
 
@@ -77,7 +79,8 @@ void connect() {
   Serial.printf("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", host);
 
   Serial.print("\nMQTT connecting...");
-  while (!client.connect(espid, email, "pi")) {
+  while (!client.connect(espid, email, "pi"))
+  {
     Serial.print(".");
     delay(1000);
   }
@@ -88,19 +91,23 @@ void connect() {
   client.subscribe("control/" + String(espid));
 }
 
-void messageReceived(String &topic, String &payload) {
+void messageReceived(String &topic, String &payload)
+{
   Serial.println("incoming: " + topic + " - " + payload);
   checkSubscribe = 0;
-  
-  if (topic == String(espid) + String("/update")) {
+
+  if (topic == String(espid) + String("/update"))
+  {
     Serial.println("publish success");
   }
-  else if (topic == String(espid) + "/control") {
+  else if (topic == String(espid) + "/control")
+  {
     Serial.println("Control command received: " + payload);
-    
+
     // Parse JSON payload
     // Expected format: {"command":"ON","timestamp":"...","user":"..."}
-    if (payload.indexOf("\"command\":\"ON\"") != -1) {
+    if (payload.indexOf("\"command\":\"ON\"") != -1)
+    {
       Serial.println("Turning device ON");
       // Add your device ON logic here
       // For example: digitalWrite(RELAY_PIN, HIGH);
@@ -110,26 +117,29 @@ void messageReceived(String &topic, String &payload) {
       String confirmTopic = String(espid) + "/confirm";
       client.publish(confirmTopic, "{\"status\":\"ON\",\"timestamp\":\"" + String(millis()) + "\"}");
     }
-    else if (payload.indexOf("\"command\":\"OFF\"") != -1) {
+    else if (payload.indexOf("\"command\":\"OFF\"") != -1)
+    {
       Serial.println("Turning device OFF");
       // Add your device OFF logic here
       // For example: digitalWrite(RELAY_PIN, LOW);
       digitalWrite(CONTROLPIN, LOW);
-      
+
       // Send confirmation back
       String confirmTopic = String(espid) + "/confirm";
       client.publish(confirmTopic, "{\"status\":\"OFF\",\"timestamp\":\"" + String(millis()) + "\"}");
     }
-    else {
+    else
+    {
       Serial.println("Unknown control command");
     }
   }
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   WiFi.begin(ssid, pass);
-  RS485Serial.begin(9600, SERIAL_8N1, MAX485_RO, MAX485_DI);  // serial สำหรับติดต่อกับ MAX485
+  RS485Serial.begin(9600, SERIAL_8N1, MAX485_RO, MAX485_DI); // serial สำหรับติดต่อกับ MAX485
 
   // Set control pin as output
   pinMode(CONTROLPIN, OUTPUT);
@@ -144,7 +154,7 @@ void setup() {
   oled.print("Carbon\nFootprint\nProject");
   oled.display();
 
-  node.preTransmission(preTransmission);  // Callbacks allow us to configure the RS485 transceiver correctly
+  node.preTransmission(preTransmission); // Callbacks allow us to configure the RS485 transceiver correctly
   node.postTransmission(postTransmission);
   node.begin(ADDRESS, RS485Serial);
 
@@ -154,16 +164,22 @@ void setup() {
   client.onMessage(messageReceived);
 
   connect();
+
+  String confirmTopic = String(espid) + "/confirm";
+  client.publish(confirmTopic, "{\"status\":\"OFF\",\"timestamp\":\"" + String(millis()) + "\"}");
 }
 
-void loop() {
+void loop()
+{
   httpServer.handleClient();
   client.loop();
-  if (!client.connected()) {
+  if (!client.connected())
+  {
     connect();
   }
 
-  if (millis() - lastMillis > 1000) {
+  if (millis() - lastMillis > 1000)
+  {
     lastMillis = millis();
 
     bool isCanRead = readFromMeter();
@@ -171,13 +187,14 @@ void loop() {
     displayUpdate(isCanRead);
 
     timetoupdate++;
-    if (timetoupdate >= UPDATETIME && isCanRead) {
+    if (timetoupdate >= UPDATETIME && isCanRead)
+    {
       timetoupdate = 0;
 
       updateParameter();
 
       checkSubscribe++;
-      if (checkSubscribe >= 10)  // resubscribe after 10 times
+      if (checkSubscribe >= 10) // resubscribe after 10 times
       {
         client.subscribe(String(espid) + String("/#"));
       }
@@ -185,35 +202,36 @@ void loop() {
   }
 }
 
-bool readFromMeter() {
+bool readFromMeter()
+{
 
 #ifdef TESTMODE
-  varfloat[0] = random(2000, 2500) * 0.1;  // Va
-  varfloat[1] = random(2000, 2500) * 0.1;  // Vb
-  varfloat[2] = random(2000, 2500) * 0.1;  // Vc
-  varfloat[3] = random(0, 1000) * 0.01;    // Ia
-  varfloat[4] = random(0, 1000) * 0.01;    // Ib
-  varfloat[5] = random(0, 1000) * 0.01;    // Ic
+  varfloat[0] = random(2000, 2500) * 0.1; // Va
+  varfloat[1] = random(2000, 2500) * 0.1; // Vb
+  varfloat[2] = random(2000, 2500) * 0.1; // Vc
+  varfloat[3] = random(0, 1000) * 0.01;   // Ia
+  varfloat[4] = random(0, 1000) * 0.01;   // Ib
+  varfloat[5] = random(0, 1000) * 0.01;   // Ic
 
   // power with signed
   // int16_t power = int16_t(node.getResponseBuffer(8)); // Pa
-  varfloat[6] = random(0, 5000) / 1000.0;  // to kW
+  varfloat[6] = random(0, 5000) / 1000.0; // to kW
   // power = int(node.getResponseBuffer(9));             // Pb
-  varfloat[7] = random(0, 5000) / 1000.0;  // to kW
+  varfloat[7] = random(0, 5000) / 1000.0; // to kW
   // power = int(node.getResponseBuffer(10));            // Pc
-  varfloat[8] = random(0, 5000) / 1000.0;  // to kW
+  varfloat[8] = random(0, 5000) / 1000.0; // to kW
 
-  varfloat[9] = random(800, 1000) * 0.001;   // PFa
-  varfloat[10] = random(800, 1000) * 0.001;  // PFb
-  varfloat[11] = random(800, 1000) * 0.001;  // PFc
+  varfloat[9] = random(800, 1000) * 0.001;  // PFa
+  varfloat[10] = random(800, 1000) * 0.001; // PFb
+  varfloat[11] = random(800, 1000) * 0.001; // PFc
 
-  varfloat[12] = random(4980, 5020) * 0.01;  // f
+  varfloat[12] = random(4980, 5020) * 0.01; // f
 
-  varfloat[13] = 1.3;  // Et
+  varfloat[13] = 1.3; // Et
 
-  varfloat[14] = 1.2;  // Ei
+  varfloat[14] = 1.2; // Ei
 
-  varfloat[15] = 0;  // Ee
+  varfloat[15] = 0; // Ee
 #else
 
   uint32_t var[16];
@@ -221,7 +239,8 @@ bool readFromMeter() {
   uint32_t tempdouble = 0x00000000;
   result = node.readInputRegisters(0x2006, 64);
   disConnect();
-  if (result == node.ku8MBSuccess) {
+  if (result == node.ku8MBSuccess)
+  {
     // voltage
     tempdouble = (node.getResponseBuffer(0) << 16) + node.getResponseBuffer(1);
     var[0] = tempdouble;
@@ -285,8 +304,9 @@ bool readFromMeter() {
     varfloat[11] = hexToFloat(var[11]) * 0.001;
     // Freq
     varfloat[12] = hexToFloat(var[12]) * 0.01;
-    
-  } else {
+  }
+  else
+  {
     Serial.println("Error 0x2000 reading");
     return false;
   }
@@ -309,7 +329,9 @@ bool readFromMeter() {
     varfloat[13] = hexToFloat(var[13]);
     varfloat[14] = hexToFloat(var[14]);
     varfloat[15] = hexToFloat(var[15]);
-  } else {
+  }
+  else
+  {
     Serial.println("Error Energy reading");
     return false;
   }
@@ -337,9 +359,11 @@ bool readFromMeter() {
   return true;
 }
 
-void updateParameter() {
+void updateParameter()
+{
   String payload = "{";
-  for (uint8_t i = 0; i < numVariables; i++) {
+  for (uint8_t i = 0; i < numVariables; i++)
+  {
     if (i)
       payload += ",";
 
@@ -353,12 +377,14 @@ void updateParameter() {
 }
 
 // ---- ฟังก์ชันแสดงผลฝ่านจอ OLED ----
-void displayUpdate(bool isCanRead) {
+void displayUpdate(bool isCanRead)
+{
   //------Update OLED------
   oled.clearDisplay();
   oled.setTextSize(1);
   oled.setCursor(0, 0);
-  if (isCanRead) {
+  if (isCanRead)
+  {
 
     oled.println("3P [kW]");
 
@@ -382,24 +408,30 @@ void displayUpdate(bool isCanRead) {
       oled.print(varfloat[8], 2);
     else
       oled.print(varfloat[8], 0);
-  } else {
+  }
+  else
+  {
     oled.println("No Sensor");
   }
   oled.display();
 }
 
-int getDecimalPlacesForDisplay(float value) {
-  String s = String(value, 3);  // Convert to string with high precision
+int getDecimalPlacesForDisplay(float value)
+{
+  String s = String(value, 3); // Convert to string with high precision
   int dotIndex = s.indexOf('.');
-  if (dotIndex == -1) {
-    return 0;  // No decimal point, it's an integer
+  if (dotIndex == -1)
+  {
+    return 0; // No decimal point, it's an integer
   }
 
   int decimalCount = 0;
   // Iterate from the end of the string backwards to find the last non-zero
   // digit
-  for (int i = s.length() - 1; i > dotIndex; i--) {
-    if (s.charAt(i) != '0') {
+  for (int i = s.length() - 1; i > dotIndex; i--)
+  {
+    if (s.charAt(i) != '0')
+    {
       decimalCount = i - dotIndex;
       break;
     }
@@ -407,17 +439,19 @@ int getDecimalPlacesForDisplay(float value) {
   return decimalCount;
 }
 
-void readEspid() {
+void readEspid()
+{
   uint32_t chipId = 0;
 
-  for (int i = 0; i < 41; i = i + 8) {
+  for (int i = 0; i < 41; i = i + 8)
+  {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
   // DEBUGLN("ESP32 Chip model = " + String(ESP.getChipModel()) + "Rev " +
   // String(ESP.getChipRevision())); DEBUGLN("Chip ID: "); DEBUGLN(chipId, HEX);
   String espid_s = String(ESP.getChipModel()) + '-' + String(ESP.getChipRevision()) + "_" + String(chipId, HEX);
 
-  uint8_t ArrayLength = min((int)espid_s.length() + 1, (int)sizeof(espid));  // The +1 is for the 0x00h Terminator
+  uint8_t ArrayLength = min((int)espid_s.length() + 1, (int)sizeof(espid)); // The +1 is for the 0x00h Terminator
   espid_s.toCharArray(espid, ArrayLength);
 }
 
@@ -439,30 +473,36 @@ void postTransmission() /* Reception program when triggered*/
   digitalWrite(MAX485_DE, 0); /* put DE Pin to low*/
 }
 
-void disConnect() {
+void disConnect()
+{
   pinMode(MAX485_RE, INPUT); /* Define RE Pin as Signal Output for RS485 converter. Output pin means Arduino command the pin signal to go high or low so that signal is received by the converter*/
   pinMode(MAX485_DE, INPUT); /* Define DE Pin as Signal Output for RS485 converter. Output pin means Arduino command the pin signal to go high or low so that signal is received by the converter*/
 }
 
-void update_started() {
+void update_started()
+{
   Serial.println("CALLBACK:  HTTP update process started");
 }
 
-void update_finished() {
+void update_finished()
+{
   Serial.println("CALLBACK:  HTTP update process finished");
 }
 
-void update_progress(int cur, int total) {
+void update_progress(int cur, int total)
+{
   Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
 }
 
-void update_error(int err) {
+void update_error(int err)
+{
   Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
 }
 
-
-float hexToFloat(uint32_t hex_value) {
-  union {
+float hexToFloat(uint32_t hex_value)
+{
+  union
+  {
     uint32_t i;
     float f;
   } u;
