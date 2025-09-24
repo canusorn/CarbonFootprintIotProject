@@ -28,6 +28,7 @@ const char email[] = "anusorn1998@gmail.com";
 // คอมเม้นเมื่อใช้งานต่อเซนเซอร์จริง
 // #define TESTMODE
 #define ADDRESS 1
+#define CTRATIO 60
 
 #define MAX485_RO 18
 #define MAX485_RE 9
@@ -272,13 +273,13 @@ bool readFromMeter()
     var[8] = tempdouble;
 
     // pf
-    tempdouble = (node.getResponseBuffer(30) << 16) + node.getResponseBuffer(31);
+    tempdouble = (node.getResponseBuffer(38) << 16) + node.getResponseBuffer(39);
     var[9] = tempdouble;
 
-    tempdouble = (node.getResponseBuffer(32) << 16) + node.getResponseBuffer(33);
+    tempdouble = (node.getResponseBuffer(40) << 16) + node.getResponseBuffer(41);
     var[10] = tempdouble;
 
-    tempdouble = (node.getResponseBuffer(34) << 16) + node.getResponseBuffer(35);
+    tempdouble = (node.getResponseBuffer(42) << 16) + node.getResponseBuffer(43);
     var[11] = tempdouble;
 
     // freq
@@ -291,13 +292,13 @@ bool readFromMeter()
     varfloat[1] = hexToFloat(var[1]) * 0.1;
     varfloat[2] = hexToFloat(var[2]) * 0.1;
     // I
-    varfloat[3] = hexToFloat(var[3]) * 0.001;
-    varfloat[4] = hexToFloat(var[4]) * 0.001;
-    varfloat[5] = hexToFloat(var[5]) * 0.001;
+    varfloat[3] = hexToFloat(var[3]) * 0.001 * CTRATIO;
+    varfloat[4] = hexToFloat(var[4]) * 0.001 * CTRATIO;
+    varfloat[5] = hexToFloat(var[5]) * 0.001 * CTRATIO;
     // P to kW
-    varfloat[6] = hexToFloat(var[6]) * 0.1 * 0.001;
-    varfloat[7] = hexToFloat(var[7]) * 0.1 * 0.001;
-    varfloat[8] = hexToFloat(var[8]) * 0.1 * 0.001;
+    varfloat[6] = hexToFloat(var[6]) * 0.1 * 0.001 * CTRATIO;
+    varfloat[7] = hexToFloat(var[7]) * 0.1 * 0.001 * CTRATIO;
+    varfloat[8] = hexToFloat(var[8]) * 0.1 * 0.001 * CTRATIO;
     // pf
     varfloat[9] = hexToFloat(var[9]) * 0.001;
     varfloat[10] = hexToFloat(var[10]) * 0.001;
@@ -326,9 +327,9 @@ bool readFromMeter()
     //  Etotal
     var[13] = var[14] - var[15];
 
-    varfloat[13] = hexToFloat(var[13]);
-    varfloat[14] = hexToFloat(var[14]);
-    varfloat[15] = hexToFloat(var[15]);
+    varfloat[13] = hexToFloat(var[13]) * CTRATIO;
+    varfloat[14] = hexToFloat(var[14]) * CTRATIO;
+    varfloat[15] = hexToFloat(var[15]) * CTRATIO;
   }
   else
   {
