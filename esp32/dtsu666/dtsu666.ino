@@ -28,7 +28,7 @@ const char email[] = "anusorn1998@gmail.com";
 // คอมเม้นเมื่อใช้งานต่อเซนเซอร์จริง
 // #define TESTMODE
 #define ADDRESS 1
-#define CTRATIO 60
+#define CTRATIO 40
 
 #define MAX485_RO 18
 #define MAX485_RE 9
