@@ -75,33 +75,24 @@ class DeviceService {
         throw new Error('Device service not initialized');
       }
       
-      // Check if device with this espId and username already exists
-      const checkQuery = 'SELECT id FROM device WHERE espid = ? AND username = ?';
-      const [existingDevice] = await this.connection.execute(checkQuery, [espId, username]);
-      
-      if (existingDevice.length > 0) {
-        console.log(`ℹ️ Device with ESP ID: ${espId} and username: ${username} already exists, skipping save`);
-        return {
-          success: true,
-          espId,
-          name,
-          username,
-          skipped: true,
-          message: 'Device already exists'
-        };
-      }
-      
-      // Insert device information (only if not exists)
+      // Atomically insert or update device — handles race between MQTT
+      // auth (which saves with email) and /confirm (which may fallback first)
       const insertQuery = `
         INSERT INTO device (espid, name, username, date) 
         VALUES (?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+          username = VALUES(username),
+          updated_at = CURRENT_TIMESTAMP
       `;
       
       const [result] = await this.connection.execute(insertQuery, [espId, name, username]);
       
-      console.log(`✅ Device data saved successfully for ESP ID: ${espId}`);
-      console.log(`   Affected rows: ${result.affectedRows}`);
-      console.log(`   Insert ID: ${result.insertId}`);
+      if (result.affectedRows === 1) {
+        console.log(`✅ Device data saved successfully for ESP ID: ${espId}`);
+        console.log(`   Insert ID: ${result.insertId}`);
+      } else {
+        console.log(`ℹ️ Updated username for existing device ESP ID: ${espId} -> ${username}`);
+      }
       
       return {
         success: true,
@@ -110,7 +101,7 @@ class DeviceService {
         username,
         affectedRows: result.affectedRows,
         insertId: result.insertId,
-        skipped: false
+        skipped: result.affectedRows !== 1
       };
       
     } catch (error) {
