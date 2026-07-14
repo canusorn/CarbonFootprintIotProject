@@ -14,9 +14,9 @@
 
 // ตั้งชื่อสำหรับเข้าถึงผ่าน domain name
 const char *host = "esp32-1";
-const char ssid[] = "G6PD_2.4G";
-const char pass[] = "570610193";
-const char email[] = "anusorn1998@gmail.com";
+const char ssid[] = "SAMHWA_Office";
+const char pass[] = "Samhwa@1234";
+const char email[] = "anonpattapee30@gmail.com";
 
 #define SERVER "pi.local"
 // #define SERVER "192.168.1.221"
@@ -324,12 +324,10 @@ bool readFromMeter()
     tempdouble = (node.getResponseBuffer(10) << 16) + node.getResponseBuffer(11);
     var[15] = tempdouble;
 
-    //  Etotal
-    var[13] = var[14] - var[15];
-
-    varfloat[13] = hexToFloat(var[13]) * CTRATIO;
     varfloat[14] = hexToFloat(var[14]) * CTRATIO;
     varfloat[15] = hexToFloat(var[15]) * CTRATIO;
+
+    varfloat[13] = varfloat[14] - varfloat[15];
   }
   else
   {

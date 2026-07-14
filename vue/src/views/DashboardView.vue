@@ -100,8 +100,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="sensorData.Pa" :readonly="true" :size="150" :min="0" :max="maxPa" 
-                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+                  <Knob v-model="Pa_kW" :readonly="true" :size="150" :min="0" :max="maxPa" 
+                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" valueTemplate="{value} kW" />
 
                 </div>
                 <div class="phase-details">
@@ -126,8 +126,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="sensorData.Pb" :readonly="true" :size="150" :min="0" :max="maxPb" 
-                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+                  <Knob v-model="Pb_kW" :readonly="true" :size="150" :min="0" :max="maxPb" 
+                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" valueTemplate="{value} kW" />
 
                 </div>
                 <div class="phase-details">
@@ -152,8 +152,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="sensorData.Pc" :readonly="true" :size="150" :min="0" :max="maxPc" 
-                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" valueTemplate="{value} W" />
+                  <Knob v-model="Pc_kW" :readonly="true" :size="150" :min="0" :max="maxPc" 
+                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" valueTemplate="{value} kW" />
                 </div>
 
                 <div class="phase-details">
@@ -178,8 +178,8 @@
                   <i class="pi pi-bolt phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
-                  <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="10000" 
-                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" valueTemplate="{value} W" />
+                  <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="10" 
+                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" valueTemplate="{value} kW" />
                 </div>
                 <div class="phase-details">
                   <div class="detail">
@@ -364,8 +364,6 @@ import { Pie } from 'vue-chartjs'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Card from 'primevue/card'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
@@ -373,9 +371,6 @@ import Dropdown from 'primevue/dropdown'
 import Knob from 'primevue/knob'
 import uPlot from 'uplot'
 import 'uplot/dist/uPlot.min.css'
-import DataCard from '@/components/DataCard.vue'
-import EnergyCard from '@/components/EnergyCard.vue'
-import CO2Card from '@/components/CO2Card.vue'
 import DailyEnergyChart from '@/components/DailyEnergyChart.vue'
 import MonthlyEnergyChart from '@/components/MonthlyEnergyChart.vue'
 import {
@@ -394,14 +389,10 @@ export default {
     TabView,
     TabPanel,
     Card,
-    DataTable,
-    Column,
     DatePicker,
+    // eslint-disable-next-line vue/no-reserved-component-names
     Button,
     InputText,
-    DataCard,
-    EnergyCard,
-    CO2Card,
     DailyEnergyChart,
     MonthlyEnergyChart,
     Dropdown,
@@ -508,7 +499,7 @@ export default {
       const Pa = parseFloat(sensorData.value.Pa) || 0
       const Pb = parseFloat(sensorData.value.Pb) || 0
       const Pc = parseFloat(sensorData.value.Pc) || 0
-      return Pa + Pb + Pc
+      return (Pa + Pb + Pc) / 1000
     })
 
     const totalCO2 = computed(() => {
@@ -534,22 +525,26 @@ export default {
       )
     })
 
+    const Pa_kW = computed(() => (parseFloat(sensorData.value.Pa) || 0) / 1000)
+    const Pb_kW = computed(() => (parseFloat(sensorData.value.Pb) || 0) / 1000)
+    const Pc_kW = computed(() => (parseFloat(sensorData.value.Pc) || 0) / 1000)
+
     // Dynamic max values for knobs - auto-adjust when values exceed current max
     const maxPa = computed(() => {
-      const currentValue = parseFloat(sensorData.value.Pa) || 0
-      const defaultMax = 10000
+      const currentValue = Pa_kW.value
+      const defaultMax = 10
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
     const maxPb = computed(() => {
-      const currentValue = parseFloat(sensorData.value.Pb) || 0
-      const defaultMax = 10000
+      const currentValue = Pb_kW.value
+      const defaultMax = 10
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
     const maxPc = computed(() => {
-      const currentValue = parseFloat(sensorData.value.Pc) || 0
-      const defaultMax = 10000
+      const currentValue = Pc_kW.value
+      const defaultMax = 10
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
@@ -1078,19 +1073,19 @@ export default {
       // Prepare chart data from todayPowerData with time series format (no limit)
       const phaseAData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.Pa
+        y: (item.Pa || 0) / 1000
       }))
       const phaseBData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.Pb
+        y: (item.Pb || 0) / 1000
       }))
       const phaseCData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.Pc
+        y: (item.Pc || 0) / 1000
       }))
       const totalPowerData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.totalPower
+        y: (item.totalPower || 0) / 1000
       }))
 
       try {
@@ -1172,7 +1167,7 @@ export default {
               padding: 0
             },
             // Add canvas validation before any drawing operations
-            onResize: (chart, size) => {
+            onResize: (chart) => {
               if (!chart.canvas || !chart.ctx) {
                 console.warn('Chart canvas or context is null during resize')
                 return false
@@ -1234,7 +1229,7 @@ export default {
                 display: true,
                 title: {
                   display: true,
-                  text: 'Power (W)'
+                  text: 'Power (kW)'
                 },
                 beginAtZero: true
               }
@@ -1273,12 +1268,6 @@ export default {
         console.error('Error creating power chart:', error)
         return
       }
-    }
-
-    // Update power chart with new data
-    const updatePowerChart = () => {
-      // Simply recreate the chart to avoid update errors
-      createPowerChart()
     }
 
     // Simplified real-time update - recreate chart to avoid errors
@@ -1379,7 +1368,6 @@ export default {
         // Set fallback data flag and last update time
         isUsingFallbackData.value = true
         lastUpdateTime.value = new Date(lastRecord.time)
-console.log(sensorData);
         // Update sensorData with last known power and voltage values
         sensorData.value = {
           ...sensorData.value,
@@ -1514,6 +1502,15 @@ console.log(sensorData);
           uplotChart.value = null
         }
       }
+      if (comprehensiveUplotChart.value) {
+        try {
+          comprehensiveUplotChart.value.destroy()
+        } catch (error) {
+          console.warn('Error destroying comprehensive uPlot chart on unmount:', error)
+        } finally {
+          comprehensiveUplotChart.value = null
+        }
+      }
     })
 
     // History tab functionality
@@ -1578,18 +1575,20 @@ console.log(sensorData);
           start = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate())
           end = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59)
           break
-        case 'last7days':
+        case 'last7days': {
           const last7Days = new Date(today)
           last7Days.setDate(last7Days.getDate() - 7)
           start = new Date(last7Days.getFullYear(), last7Days.getMonth(), last7Days.getDate())
           end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
           break
-        case 'last30days':
+        }
+        case 'last30days': {
           const last30Days = new Date(today)
           last30Days.setDate(last30Days.getDate() - 30)
           start = new Date(last30Days.getFullYear(), last30Days.getMonth(), last30Days.getDate())
           end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
           break
+        }
       }
 
       // Update both individual dates and range
@@ -1715,7 +1714,7 @@ console.log(sensorData);
       let cumulativeCO2 = 0
       const baseEnergy = sortedData.length > 0 ? (parseFloat(sortedData[0].Et) || 0) : 0
 
-      sortedData.forEach((record, index) => {
+      sortedData.forEach((record) => {
         const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
 
         // 1. Total Power (W)
@@ -1737,7 +1736,7 @@ console.log(sensorData);
         cumulativeCO2 = calculateCO2Emissions(totalEnergy)
 
         timestamps.push(timestamp)
-        powerData.push(totalPower)
+        powerData.push(totalPower / 1000)
         co2FromPowerData.push(co2FromPower)
         energyData.push(totalEnergy)
         cumulativeCO2FromEnergyData.push(cumulativeCO2)
@@ -1757,7 +1756,7 @@ console.log(sensorData);
         series: [
           {},
           {
-            label: 'Total Power (W)',
+            label: 'Total Power (kW)',
             stroke: '#3498db',
             width: 2,
             scale: 'power'
@@ -1827,7 +1826,7 @@ console.log(sensorData);
           },
           {
             scale: 'power',
-            label: 'Power (W)',
+            label: 'Power (kW)',
             labelGap: 8,
             side: 3,
             grid: { show: true }
@@ -1895,8 +1894,8 @@ console.log(sensorData);
         'Timestamp',
         'Voltage A (V)', 'Voltage B (V)', 'Voltage C (V)',
         'Current A (A)', 'Current B (A)', 'Current C (A)',
-        'Power A (W)', 'Power B (W)', 'Power C (W)',
-        'Total Power (W)',
+        'Power A (kW)', 'Power B (kW)', 'Power C (kW)',
+        'Total Power (kW)',
         'Power Factor A', 'Power Factor B', 'Power Factor C',
         'Energy Import (kWh)', 'Energy Export (kWh)', 'Energy Total (kWh)',
         'CO2 Emissions (kg)'
@@ -1915,8 +1914,8 @@ console.log(sensorData);
           new Date(record.time).toLocaleString(),
           record.Va || 0, record.Vb || 0, record.Vc || 0,
           record.Ia || 0, record.Ib || 0, record.Ic || 0,
-          record.Pa || 0, record.Pb || 0, record.Pc || 0,
-          totalPower,
+          (record.Pa || 0) / 1000, (record.Pb || 0) / 1000, (record.Pc || 0) / 1000,
+          totalPower / 1000,
           record.PFa || 0, record.PFb || 0, record.PFc || 0,
           record.Ei || 0, record.Ee || 0, record.Et || 0,
           co2.toFixed(4)
@@ -2091,21 +2090,21 @@ console.log(sensorData);
           const pa = parseFloat(record.Pa) || 0
           const pb = parseFloat(record.Pb) || 0
           const pc = parseFloat(record.Pc) || 0
-          paData.push(pa)
-          pbData.push(pb)
-          pcData.push(pc)
-          totalPowerData.push(pa + pb + pc)
+          paData.push(pa / 1000)
+          pbData.push(pb / 1000)
+          pcData.push(pc / 1000)
+          totalPowerData.push((pa + pb + pc) / 1000)
         })
         seriesData.push(timestamps, paData, pbData, pcData, totalPowerData)
         seriesConfig.push(
           {},
-          { label: 'Power A (W)', stroke: '#e74c3c', width: 2, scale: 'power' },
-          { label: 'Power B (W)', stroke: '#f39c12', width: 2, scale: 'power' },
-          { label: 'Power C (W)', stroke: '#3498db', width: 2, scale: 'power' },
-          { label: 'Total Power (W)', stroke: '#2ecc71', width: 3, scale: 'power' }
+          { label: 'Power A (kW)', stroke: '#e74c3c', width: 2, scale: 'power' },
+          { label: 'Power B (kW)', stroke: '#f39c12', width: 2, scale: 'power' },
+          { label: 'Power C (kW)', stroke: '#3498db', width: 2, scale: 'power' },
+          { label: 'Total Power (kW)', stroke: '#2ecc71', width: 3, scale: 'power' }
         )
         scales.power = { auto: true }
-        axes.push({ scale: 'power', label: 'Power (W)', labelGap: 8, side: 3, grid: { show: true } })
+        axes.push({ scale: 'power', label: 'Power (kW)', labelGap: 8, side: 3, grid: { show: true } })
 
       } else if (comprehensiveChartType.value === 'powerfactor') {
         const pfaData = [], pfbData = [], pfcData = []
@@ -2154,9 +2153,9 @@ console.log(sensorData);
           ibData.push(parseFloat(record.Ib) || 0)
           icData.push(parseFloat(record.Ic) || 0)
           // Power data
-          paData.push(parseFloat(record.Pa) || 0)
-          pbData.push(parseFloat(record.Pb) || 0)
-          pcData.push(parseFloat(record.Pc) || 0)
+          paData.push((parseFloat(record.Pa) || 0) / 1000)
+          pbData.push((parseFloat(record.Pb) || 0) / 1000)
+          pcData.push((parseFloat(record.Pc) || 0) / 1000)
           // Power Factor data
           pfaData.push(parseFloat(record.PFa) || 0)
           pfbData.push(parseFloat(record.PFb) || 0)
@@ -2177,9 +2176,9 @@ console.log(sensorData);
           { label: 'Ib (A)', stroke: '#e67e22', width: 2, scale: 'current' },
           { label: 'Ic (A)', stroke: '#d35400', width: 2, scale: 'current' },
           // Power series
-          { label: 'Pa (W)', stroke: '#3498db', width: 2, scale: 'power' },
-          { label: 'Pb (W)', stroke: '#2980b9', width: 2, scale: 'power' },
-          { label: 'Pc (W)', stroke: '#1f618d', width: 2, scale: 'power' },
+          { label: 'Pa (kW)', stroke: '#3498db', width: 2, scale: 'power' },
+          { label: 'Pb (kW)', stroke: '#2980b9', width: 2, scale: 'power' },
+          { label: 'Pc (kW)', stroke: '#1f618d', width: 2, scale: 'power' },
           // Power Factor series
           { label: 'PFa', stroke: '#2ecc71', width: 2, scale: 'pf' },
           { label: 'PFb', stroke: '#27ae60', width: 2, scale: 'pf' },
@@ -2197,7 +2196,7 @@ console.log(sensorData);
         axes.push(
           { scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } },
           { scale: 'current', label: 'Current (A)', labelGap: 8, side: 1, grid: { show: false } },
-          { scale: 'power', label: 'Power (W)', labelGap: 8, side: 3, grid: { show: false } },
+          { scale: 'power', label: 'Power (kW)', labelGap: 8, side: 3, grid: { show: false } },
           { scale: 'pf', label: 'Power Factor', labelGap: 8, side: 1, grid: { show: false } },
           { scale: 'energy', label: 'Energy (kWh)', labelGap: 8, side: 3, grid: { show: false } }
         )
@@ -2308,16 +2307,6 @@ console.log(sensorData);
       }
     }
 
-    // Cleanup uPlot charts on unmount
-    onUnmounted(() => {
-      if (uplotChart.value) {
-        uplotChart.value.destroy()
-      }
-      if (comprehensiveUplotChart.value) {
-        comprehensiveUplotChart.value.destroy()
-      }
-    })
-
     return {
       sensorData,
       historicalData,
@@ -2329,6 +2318,9 @@ console.log(sensorData);
       isConnected,
       isUsingFallbackData,
       lastUpdateTime,
+      Pa_kW,
+      Pb_kW,
+      Pc_kW,
       totalPower,
       totalCO2,
       dailyCO2,
