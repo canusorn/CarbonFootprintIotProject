@@ -173,6 +173,18 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  min-height: 100vh;
+}
+
+.devices-view::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('/dashboard.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+  z-index: -1;
 }
 
 .devices-header {

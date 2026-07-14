@@ -2406,6 +2406,18 @@ console.log(sensorData);
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  min-height: 100vh;
+}
+
+.dashboard-container::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('/dashboard.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.3;
+  z-index: -1;
 }
 
 .dashboard-header {
@@ -3107,8 +3119,12 @@ console.log(sensorData);
 
 .history-content {
   padding: 24px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: transparent;
   min-height: 100vh;
+}
+
+:deep(.p-tabview-panels) {
+  background: transparent;
 }
 
 .history-controls {
