@@ -178,7 +178,7 @@
                   <i class="pi pi-bolt phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
-                  <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="10" 
+                  <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="300" 
                         :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
                 </div>
                 <div class="phase-details">
@@ -499,7 +499,7 @@ export default {
       const Pa = parseFloat(sensorData.value.Pa) || 0
       const Pb = parseFloat(sensorData.value.Pb) || 0
       const Pc = parseFloat(sensorData.value.Pc) || 0
-      return (Pa + Pb + Pc) / 1000
+      return Pa + Pb + Pc
     })
 
     const totalCO2 = computed(() => {
@@ -525,26 +525,26 @@ export default {
       )
     })
 
-    const Pa_kW = computed(() => (parseFloat(sensorData.value.Pa) || 0) / 1000)
-    const Pb_kW = computed(() => (parseFloat(sensorData.value.Pb) || 0) / 1000)
-    const Pc_kW = computed(() => (parseFloat(sensorData.value.Pc) || 0) / 1000)
+    const Pa_kW = computed(() => parseFloat(sensorData.value.Pa) || 0)
+    const Pb_kW = computed(() => parseFloat(sensorData.value.Pb) || 0)
+    const Pc_kW = computed(() => parseFloat(sensorData.value.Pc) || 0)
 
     // Dynamic max values for knobs - auto-adjust when values exceed current max
     const maxPa = computed(() => {
       const currentValue = Pa_kW.value
-      const defaultMax = 10
+      const defaultMax = 100
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
     const maxPb = computed(() => {
       const currentValue = Pb_kW.value
-      const defaultMax = 10
+      const defaultMax = 100
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
     const maxPc = computed(() => {
       const currentValue = Pc_kW.value
-      const defaultMax = 10
+      const defaultMax = 100
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
@@ -1073,19 +1073,19 @@ export default {
       // Prepare chart data from todayPowerData with time series format (no limit)
       const phaseAData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: (item.Pa || 0) / 1000
+        y: item.Pa || 0
       }))
       const phaseBData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: (item.Pb || 0) / 1000
+        y: item.Pb || 0
       }))
       const phaseCData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: (item.Pc || 0) / 1000
+        y: item.Pc || 0
       }))
       const totalPowerData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: (item.totalPower || 0) / 1000
+        y: item.totalPower || 0
       }))
 
       try {
@@ -1717,16 +1717,14 @@ export default {
       sortedData.forEach((record) => {
         const timestamp = new Date(record.time).getTime() / 1000 // uPlot expects seconds
 
-        // 1. Total Power (W)
+        // 1. Total Power (kW)
         const Pa = parseFloat(record.Pa) || 0
         const Pb = parseFloat(record.Pb) || 0
         const Pc = parseFloat(record.Pc) || 0
         const totalPower = Pa + Pb + Pc
 
         // 2. CO2 from Power (instantaneous calculation)
-        // Convert power to energy (assuming 1-hour intervals for approximation)
-        const powerInKW = totalPower / 1000
-        const co2FromPower = calculateCO2Emissions(powerInKW)
+        const co2FromPower = calculateCO2Emissions(totalPower)
 
         // 3. Total Energy (kWh)
         const energyValue = parseFloat(record.Et) || 0
@@ -1736,7 +1734,7 @@ export default {
         cumulativeCO2 = calculateCO2Emissions(totalEnergy)
 
         timestamps.push(timestamp)
-        powerData.push(totalPower / 1000)
+        powerData.push(totalPower)
         co2FromPowerData.push(co2FromPower)
         energyData.push(totalEnergy)
         cumulativeCO2FromEnergyData.push(cumulativeCO2)
@@ -1914,8 +1912,8 @@ export default {
           new Date(record.time).toLocaleString(),
           record.Va || 0, record.Vb || 0, record.Vc || 0,
           record.Ia || 0, record.Ib || 0, record.Ic || 0,
-          (record.Pa || 0) / 1000, (record.Pb || 0) / 1000, (record.Pc || 0) / 1000,
-          totalPower / 1000,
+          record.Pa || 0, record.Pb || 0, record.Pc || 0,
+          totalPower,
           record.PFa || 0, record.PFb || 0, record.PFc || 0,
           record.Ei || 0, record.Ee || 0, record.Et || 0,
           co2.toFixed(4)
@@ -2090,10 +2088,10 @@ export default {
           const pa = parseFloat(record.Pa) || 0
           const pb = parseFloat(record.Pb) || 0
           const pc = parseFloat(record.Pc) || 0
-          paData.push(pa / 1000)
-          pbData.push(pb / 1000)
-          pcData.push(pc / 1000)
-          totalPowerData.push((pa + pb + pc) / 1000)
+          paData.push(pa)
+          pbData.push(pb)
+          pcData.push(pc)
+          totalPowerData.push(pa + pb + pc)
         })
         seriesData.push(timestamps, paData, pbData, pcData, totalPowerData)
         seriesConfig.push(
@@ -2153,9 +2151,9 @@ export default {
           ibData.push(parseFloat(record.Ib) || 0)
           icData.push(parseFloat(record.Ic) || 0)
           // Power data
-          paData.push((parseFloat(record.Pa) || 0) / 1000)
-          pbData.push((parseFloat(record.Pb) || 0) / 1000)
-          pcData.push((parseFloat(record.Pc) || 0) / 1000)
+          paData.push(parseFloat(record.Pa) || 0)
+          pbData.push(parseFloat(record.Pb) || 0)
+          pcData.push(parseFloat(record.Pc) || 0)
           // Power Factor data
           pfaData.push(parseFloat(record.PFa) || 0)
           pfbData.push(parseFloat(record.PFb) || 0)
