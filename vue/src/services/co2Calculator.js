@@ -43,7 +43,7 @@ export const CO2_SCOPES = {
  * @returns {number} CO2 emissions in kg
  */
 export function calculateCO2Emissions(energyKWh, emissionFactor = EMISSION_FACTORS.THAILAND) {
-  if (typeof energyKWh !== 'number' || energyKWh < 0) {
+  if (typeof energyKWh !== 'number' || isNaN(energyKWh)) {
     console.warn('Invalid energy value provided:', energyKWh)
     return 0
   }
@@ -52,8 +52,10 @@ export function calculateCO2Emissions(energyKWh, emissionFactor = EMISSION_FACTO
     console.warn('Invalid emission factor provided:', emissionFactor)
     emissionFactor = EMISSION_FACTORS.THAILAND
   }
-  
-  return energyKWh * emissionFactor
+
+  // Use absolute value so net-export scenarios (Et < 0, e.g. solar surplus)
+  // still report emissions based on energy flow magnitude.
+  return Math.abs(energyKWh) * emissionFactor
 }
 
 /**

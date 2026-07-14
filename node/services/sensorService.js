@@ -290,8 +290,9 @@ class SensorService {
         console.log(`✅ Daily energy calculation completed for ESP ${espId} (month ${month}) in ${duration}ms (${rows.length} days)`);
         
         // Format the results
+        // With dateStrings: true, row.date is already a 'YYYY-MM-DD' string.
         const result = rows.map(row => ({
-          date: new Date(row.date).toISOString().split('T')[0],
+          date: typeof row.date === 'string' ? row.date : new Date(row.date).toISOString().split('T')[0],
           energy: Math.max(0, parseFloat(row.daily_energy) || 0),
           recordCount: parseInt(row.record_count) || 0
         }));
@@ -343,18 +344,13 @@ class SensorService {
         console.log(`✅ Daily energy calculation completed for ESP ${espId} in ${duration}ms (${rows.length} days)`);
         
         // Format the results
-        const result = rows.map(row => {
-          const adjustedDate = new Date(row.date);
-          adjustedDate.setDate(adjustedDate.getDate() + 1);
-          // Handle UTC+7 timezone offset
-          const utcTime = adjustedDate.getTime() + (adjustedDate.getTimezoneOffset() * 60000);
-          const localTime = new Date(utcTime + (7 * 3600000)); // UTC+7
-          return {
-            date: localTime.toISOString().split('T')[0],
-            energy: Math.max(0, parseFloat(row.daily_energy) || 0),
-            recordCount: parseInt(row.record_count) || 0
-          };
-        });
+        // With dateStrings: true in the pool config, row.date is already
+        // a 'YYYY-MM-DD' string from MySQL — no Date-object timezone hack needed.
+        const result = rows.map(row => ({
+          date: typeof row.date === 'string' ? row.date : new Date(row.date).toISOString().split('T')[0],
+          energy: Math.max(0, parseFloat(row.daily_energy) || 0),
+          recordCount: parseInt(row.record_count) || 0
+        }));
         
         return result;
       }

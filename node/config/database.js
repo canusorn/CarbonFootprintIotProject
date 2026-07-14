@@ -8,7 +8,9 @@ const dbConfig = {
   database: process.env.DB_NAME || 'carbon_footprint_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: process.env.DB_TIMEZONE || '+07:00',
+  dateStrings: true
 };
 
 // Sensor database configuration (for time series sensor data)
@@ -19,7 +21,14 @@ const sensorDbConfig = {
   database: 'sensor',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  // Use Thailand timezone (UTC+7) to match the application's local timezone.
+  // This ensures Date objects sent to MySQL and string comparisons in WHERE
+  // clauses are interpreted consistently by the MySQL server.
+  timezone: process.env.DB_TIMEZONE || '+07:00',
+  // Return date/time columns as strings to avoid implicit Date-object
+  // timezone conversions that can shift values by hours or whole days.
+  dateStrings: true
 };
 
 // Connection pools (will be created when database is available)
