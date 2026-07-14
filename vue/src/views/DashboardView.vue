@@ -101,7 +101,7 @@
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
                   <Knob v-model="Pa_kW" :readonly="true" :size="150" :min="0" :max="maxPa" 
-                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" valueTemplate="{value} kW" />
+                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
 
                 </div>
                 <div class="phase-details">
@@ -127,7 +127,7 @@
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
                   <Knob v-model="Pb_kW" :readonly="true" :size="150" :min="0" :max="maxPb" 
-                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" valueTemplate="{value} kW" />
+                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
 
                 </div>
                 <div class="phase-details">
@@ -153,7 +153,7 @@
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
                   <Knob v-model="Pc_kW" :readonly="true" :size="150" :min="0" :max="maxPc" 
-                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" valueTemplate="{value} kW" />
+                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
                 </div>
 
                 <div class="phase-details">
@@ -179,7 +179,7 @@
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
                   <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="10" 
-                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" valueTemplate="{value} kW" />
+                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
                 </div>
                 <div class="phase-details">
                   <div class="detail">
