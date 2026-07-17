@@ -1110,7 +1110,7 @@ export default {
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
                 borderWidth: 2,
-                pointRadius: 1.5,
+                pointRadius: 0,
                 fill: false,
                 tension: 0,
                 clip: false
@@ -1121,7 +1121,7 @@ export default {
                 borderColor: '#f39c12',
                 backgroundColor: 'rgba(243, 156, 18, 0.1)',
                 borderWidth: 2,
-                pointRadius: 1.5,
+                pointRadius: 0,
                 fill: false,
                 tension: 0,
                 clip: false
@@ -1132,7 +1132,7 @@ export default {
                 borderColor: '#0ea5e9',
                 backgroundColor: 'rgba(14, 165, 233, 0.1)',
                 borderWidth: 2,
-                pointRadius: 1.5,
+                pointRadius: 0,
                 fill: false,
                 tension: 0,
                 clip: false
@@ -1143,7 +1143,7 @@ export default {
                 borderColor: '#8e44ad',
                 backgroundColor: 'rgba(142, 68, 173, 0.1)',
                 borderWidth: 3,
-                pointRadius: 2,
+                pointRadius: 0,
                 fill: false,
                 tension: 0,
                 clip: false
