@@ -1109,7 +1109,7 @@ export default {
                 data: phaseAData,
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                borderWidth: 2,
+                borderWidth: 1,
                 pointRadius: 0,
                 fill: false,
                 tension: 0,
@@ -1120,7 +1120,7 @@ export default {
                 data: phaseBData,
                 borderColor: '#f39c12',
                 backgroundColor: 'rgba(243, 156, 18, 0.1)',
-                borderWidth: 2,
+                borderWidth: 1,
                 pointRadius: 0,
                 fill: false,
                 tension: 0,
@@ -1131,7 +1131,7 @@ export default {
                 data: phaseCData,
                 borderColor: '#0ea5e9',
                 backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                borderWidth: 2,
+                borderWidth: 1,
                 pointRadius: 0,
                 fill: false,
                 tension: 0,
@@ -1142,7 +1142,7 @@ export default {
                 data: totalPowerData,
                 borderColor: '#8e44ad',
                 backgroundColor: 'rgba(142, 68, 173, 0.1)',
-                borderWidth: 3,
+                borderWidth: 1,
                 pointRadius: 0,
                 fill: false,
                 tension: 0,
@@ -1760,25 +1760,25 @@ export default {
           {
             label: 'Total Power (kW)',
             stroke: '#3498db',
-            width: 2,
+            width: 1,
             scale: 'power'
           },
           {
             label: 'CO2 from Power (kg)',
             stroke: '#e74c3c',
-            width: 2,
+            width: 1,
             scale: 'co2Power'
           },
           {
             label: 'Total Energy (kWh)',
             stroke: '#2ecc71',
-            width: 2,
+            width: 1,
             scale: 'energy'
           },
           {
             label: 'Cumulative CO2 from Energy (kg)',
             stroke: '#f39c12',
-            width: 2,
+            width: 1,
             scale: 'co2Energy'
           }
         ],
@@ -2062,9 +2062,9 @@ export default {
         seriesData.push(timestamps, vaData, vbData, vcData)
         seriesConfig.push(
           {},
-          { label: 'Voltage A (V)', stroke: '#e74c3c', width: 2, scale: 'voltage' },
-          { label: 'Voltage B (V)', stroke: '#f39c12', width: 2, scale: 'voltage' },
-          { label: 'Voltage C (V)', stroke: '#0ea5e9', width: 2, scale: 'voltage' }
+          { label: 'Voltage A (V)', stroke: '#e74c3c', width: 1, scale: 'voltage' },
+          { label: 'Voltage B (V)', stroke: '#f39c12', width: 1, scale: 'voltage' },
+          { label: 'Voltage C (V)', stroke: '#0ea5e9', width: 1, scale: 'voltage' }
         )
         scales.voltage = { auto: true }
         axes.push({ scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } })
@@ -2079,9 +2079,9 @@ export default {
         seriesData.push(timestamps, iaData, ibData, icData)
         seriesConfig.push(
           {},
-          { label: 'Current A (A)', stroke: '#e74c3c', width: 2, scale: 'current' },
-          { label: 'Current B (A)', stroke: '#f39c12', width: 2, scale: 'current' },
-          { label: 'Current C (A)', stroke: '#0ea5e9', width: 2, scale: 'current' }
+          { label: 'Current A (A)', stroke: '#e74c3c', width: 1, scale: 'current' },
+          { label: 'Current B (A)', stroke: '#f39c12', width: 1, scale: 'current' },
+          { label: 'Current C (A)', stroke: '#0ea5e9', width: 1, scale: 'current' }
         )
         scales.current = { auto: true }
         axes.push({ scale: 'current', label: 'Current (A)', labelGap: 8, side: 3, grid: { show: true } })
@@ -2100,10 +2100,10 @@ export default {
         seriesData.push(timestamps, paData, pbData, pcData, totalPowerData)
         seriesConfig.push(
           {},
-          { label: 'Power A (kW)', stroke: '#e74c3c', width: 2, scale: 'power' },
-          { label: 'Power B (kW)', stroke: '#f39c12', width: 2, scale: 'power' },
-          { label: 'Power C (kW)', stroke: '#0ea5e9', width: 2, scale: 'power' },
-          { label: 'Total Power (kW)', stroke: '#2ecc71', width: 3, scale: 'power' }
+          { label: 'Power A (kW)', stroke: '#e74c3c', width: 1, scale: 'power' },
+          { label: 'Power B (kW)', stroke: '#f39c12', width: 1, scale: 'power' },
+          { label: 'Power C (kW)', stroke: '#0ea5e9', width: 1, scale: 'power' },
+          { label: 'Total Power (kW)', stroke: '#2ecc71', width: 1, scale: 'power' }
         )
         scales.power = { auto: true }
         axes.push({ scale: 'power', label: 'Power (kW)', labelGap: 8, side: 3, grid: { show: true } })
@@ -2118,9 +2118,9 @@ export default {
         seriesData.push(timestamps, pfaData, pfbData, pfcData)
         seriesConfig.push(
           {},
-          { label: 'Power Factor A', stroke: '#e74c3c', width: 2, scale: 'pf' },
-          { label: 'Power Factor B', stroke: '#f39c12', width: 2, scale: 'pf' },
-          { label: 'Power Factor C', stroke: '#0ea5e9', width: 2, scale: 'pf' }
+          { label: 'Power Factor A', stroke: '#e74c3c', width: 1, scale: 'pf' },
+          { label: 'Power Factor B', stroke: '#f39c12', width: 1, scale: 'pf' },
+          { label: 'Power Factor C', stroke: '#0ea5e9', width: 1, scale: 'pf' }
         )
         scales.pf = { auto: true, range: [0, 1] }
         axes.push({ scale: 'pf', label: 'Power Factor', labelGap: 8, side: 3, grid: { show: true } })
@@ -2133,7 +2133,7 @@ export default {
         seriesData.push(timestamps, ettData)
         seriesConfig.push(
           {},
-          { label: 'Total Energy (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
+          { label: 'Total Energy (kWh)', stroke: '#9b59b6', width: 1, scale: 'energy' }
         )
         scales.energy = { auto: true }
         axes.push({ scale: 'energy', label: 'Energy (kWh)', labelGap: 8, side: 3, grid: { show: true } })
@@ -2170,23 +2170,23 @@ export default {
         seriesConfig.push(
           {},
           // Voltage series
-          { label: 'Va (V)', stroke: '#e74c3c', width: 2, scale: 'voltage' },
-          { label: 'Vb (V)', stroke: '#f39c12', width: 2, scale: 'voltage' },
-          { label: 'Vc (V)', stroke: '#0ea5e9', width: 2, scale: 'voltage' },
+          { label: 'Va (V)', stroke: '#e74c3c', width: 1, scale: 'voltage' },
+          { label: 'Vb (V)', stroke: '#f39c12', width: 1, scale: 'voltage' },
+          { label: 'Vc (V)', stroke: '#0ea5e9', width: 1, scale: 'voltage' },
           // Current series
-          { label: 'Ia (A)', stroke: '#e74c3c', width: 2, scale: 'current' },
-          { label: 'Ib (A)', stroke: '#f39c12', width: 2, scale: 'current' },
-          { label: 'Ic (A)', stroke: '#0ea5e9', width: 2, scale: 'current' },
+          { label: 'Ia (A)', stroke: '#e74c3c', width: 1, scale: 'current' },
+          { label: 'Ib (A)', stroke: '#f39c12', width: 1, scale: 'current' },
+          { label: 'Ic (A)', stroke: '#0ea5e9', width: 1, scale: 'current' },
           // Power series
-          { label: 'Pa (kW)', stroke: '#e74c3c', width: 2, scale: 'power' },
-          { label: 'Pb (kW)', stroke: '#f39c12', width: 2, scale: 'power' },
-          { label: 'Pc (kW)', stroke: '#0ea5e9', width: 2, scale: 'power' },
+          { label: 'Pa (kW)', stroke: '#e74c3c', width: 1, scale: 'power' },
+          { label: 'Pb (kW)', stroke: '#f39c12', width: 1, scale: 'power' },
+          { label: 'Pc (kW)', stroke: '#0ea5e9', width: 1, scale: 'power' },
           // Power Factor series
-          { label: 'PFa', stroke: '#e74c3c', width: 2, scale: 'pf' },
-          { label: 'PFb', stroke: '#f39c12', width: 2, scale: 'pf' },
-          { label: 'PFc', stroke: '#0ea5e9', width: 2, scale: 'pf' },
+          { label: 'PFa', stroke: '#e74c3c', width: 1, scale: 'pf' },
+          { label: 'PFb', stroke: '#f39c12', width: 1, scale: 'pf' },
+          { label: 'PFc', stroke: '#0ea5e9', width: 1, scale: 'pf' },
           // Energy Total
-          { label: 'Et (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
+          { label: 'Et (kWh)', stroke: '#9b59b6', width: 1, scale: 'energy' }
         )
 
         scales.voltage = { auto: true }
