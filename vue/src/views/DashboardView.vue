@@ -1110,9 +1110,10 @@ export default {
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
                 borderWidth: 2,
+                pointRadius: 1.5,
                 fill: false,
                 tension: 0,
-                clip: false // Disable clipping to prevent clipArea errors
+                clip: false
               },
               {
                 label: 'Phase B',
@@ -1120,19 +1121,21 @@ export default {
                 borderColor: '#f39c12',
                 backgroundColor: 'rgba(243, 156, 18, 0.1)',
                 borderWidth: 2,
+                pointRadius: 1.5,
                 fill: false,
                 tension: 0,
-                clip: false // Disable clipping to prevent clipArea errors
+                clip: false
               },
               {
                 label: 'Phase C',
                 data: phaseCData,
-                borderColor: '#27ae60',
-                backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                borderColor: '#0ea5e9',
+                backgroundColor: 'rgba(14, 165, 233, 0.1)',
                 borderWidth: 2,
+                pointRadius: 1.5,
                 fill: false,
                 tension: 0,
-                clip: false // Disable clipping to prevent clipArea errors
+                clip: false
               },
               {
                 label: 'Total Power',
@@ -1140,9 +1143,10 @@ export default {
                 borderColor: '#8e44ad',
                 backgroundColor: 'rgba(142, 68, 173, 0.1)',
                 borderWidth: 3,
+                pointRadius: 2,
                 fill: false,
                 tension: 0,
-                clip: false // Disable clipping to prevent clipArea errors
+                clip: false
               }
             ]
           },
@@ -2060,7 +2064,7 @@ export default {
           {},
           { label: 'Voltage A (V)', stroke: '#e74c3c', width: 2, scale: 'voltage' },
           { label: 'Voltage B (V)', stroke: '#f39c12', width: 2, scale: 'voltage' },
-          { label: 'Voltage C (V)', stroke: '#3498db', width: 2, scale: 'voltage' }
+          { label: 'Voltage C (V)', stroke: '#0ea5e9', width: 2, scale: 'voltage' }
         )
         scales.voltage = { auto: true }
         axes.push({ scale: 'voltage', label: 'Voltage (V)', labelGap: 8, side: 3, grid: { show: true } })
@@ -2077,7 +2081,7 @@ export default {
           {},
           { label: 'Current A (A)', stroke: '#e74c3c', width: 2, scale: 'current' },
           { label: 'Current B (A)', stroke: '#f39c12', width: 2, scale: 'current' },
-          { label: 'Current C (A)', stroke: '#3498db', width: 2, scale: 'current' }
+          { label: 'Current C (A)', stroke: '#0ea5e9', width: 2, scale: 'current' }
         )
         scales.current = { auto: true }
         axes.push({ scale: 'current', label: 'Current (A)', labelGap: 8, side: 3, grid: { show: true } })
@@ -2098,7 +2102,7 @@ export default {
           {},
           { label: 'Power A (kW)', stroke: '#e74c3c', width: 2, scale: 'power' },
           { label: 'Power B (kW)', stroke: '#f39c12', width: 2, scale: 'power' },
-          { label: 'Power C (kW)', stroke: '#3498db', width: 2, scale: 'power' },
+          { label: 'Power C (kW)', stroke: '#0ea5e9', width: 2, scale: 'power' },
           { label: 'Total Power (kW)', stroke: '#2ecc71', width: 3, scale: 'power' }
         )
         scales.power = { auto: true }
@@ -2116,7 +2120,7 @@ export default {
           {},
           { label: 'Power Factor A', stroke: '#e74c3c', width: 2, scale: 'pf' },
           { label: 'Power Factor B', stroke: '#f39c12', width: 2, scale: 'pf' },
-          { label: 'Power Factor C', stroke: '#3498db', width: 2, scale: 'pf' }
+          { label: 'Power Factor C', stroke: '#0ea5e9', width: 2, scale: 'pf' }
         )
         scales.pf = { auto: true, range: [0, 1] }
         axes.push({ scale: 'pf', label: 'Power Factor', labelGap: 8, side: 3, grid: { show: true } })
@@ -2167,20 +2171,20 @@ export default {
           {},
           // Voltage series
           { label: 'Va (V)', stroke: '#e74c3c', width: 2, scale: 'voltage' },
-          { label: 'Vb (V)', stroke: '#c0392b', width: 2, scale: 'voltage' },
-          { label: 'Vc (V)', stroke: '#a93226', width: 2, scale: 'voltage' },
+          { label: 'Vb (V)', stroke: '#f39c12', width: 2, scale: 'voltage' },
+          { label: 'Vc (V)', stroke: '#0ea5e9', width: 2, scale: 'voltage' },
           // Current series
-          { label: 'Ia (A)', stroke: '#f39c12', width: 2, scale: 'current' },
-          { label: 'Ib (A)', stroke: '#e67e22', width: 2, scale: 'current' },
-          { label: 'Ic (A)', stroke: '#d35400', width: 2, scale: 'current' },
+          { label: 'Ia (A)', stroke: '#e74c3c', width: 2, scale: 'current' },
+          { label: 'Ib (A)', stroke: '#f39c12', width: 2, scale: 'current' },
+          { label: 'Ic (A)', stroke: '#0ea5e9', width: 2, scale: 'current' },
           // Power series
-          { label: 'Pa (kW)', stroke: '#3498db', width: 2, scale: 'power' },
-          { label: 'Pb (kW)', stroke: '#2980b9', width: 2, scale: 'power' },
-          { label: 'Pc (kW)', stroke: '#1f618d', width: 2, scale: 'power' },
+          { label: 'Pa (kW)', stroke: '#e74c3c', width: 2, scale: 'power' },
+          { label: 'Pb (kW)', stroke: '#f39c12', width: 2, scale: 'power' },
+          { label: 'Pc (kW)', stroke: '#0ea5e9', width: 2, scale: 'power' },
           // Power Factor series
-          { label: 'PFa', stroke: '#2ecc71', width: 2, scale: 'pf' },
-          { label: 'PFb', stroke: '#27ae60', width: 2, scale: 'pf' },
-          { label: 'PFc', stroke: '#229954', width: 2, scale: 'pf' },
+          { label: 'PFa', stroke: '#e74c3c', width: 2, scale: 'pf' },
+          { label: 'PFb', stroke: '#f39c12', width: 2, scale: 'pf' },
+          { label: 'PFc', stroke: '#0ea5e9', width: 2, scale: 'pf' },
           // Energy Total
           { label: 'Et (kWh)', stroke: '#9b59b6', width: 3, scale: 'energy' }
         )
@@ -2907,7 +2911,7 @@ export default {
 }
 
 .phase-card.phase-c {
-  border-left-color: #27ae60;
+  border-left-color: #0ea5e9;
 }
 
 .phase-card.total-power {
@@ -2941,7 +2945,7 @@ export default {
 }
 
 .phase-card.phase-c .phase-indicator {
-  color: #27ae60;
+  color: #0ea5e9;
 }
 
 .phase-card.total-power .phase-indicator {
