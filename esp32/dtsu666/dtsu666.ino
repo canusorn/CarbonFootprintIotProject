@@ -20,7 +20,7 @@ const char email[] = "anonpattapee30@gmail.com";
 
 #define SERVER "pi.local"
 // #define SERVER "192.168.1.221"
-#define UPDATETIME 5 // update time in second
+#define UPDATETIME 300 // update time in second (5 minutes)
 
 // pin ที่สั่ง on off
 #define CONTROLPIN 15
@@ -56,7 +56,7 @@ String keyname[numVariables] = {
     "Pa", "Pb", "Pc",
     "PFa", "PFb", "PFc", "f",
     "Et", "Ei", "Ee"};
-uint8_t timetoupdate = 0;
+uint16_t timetoupdate = 0;
 uint8_t checkSubscribe = 0;
 
 void connect()
