@@ -10,7 +10,7 @@ export const EMISSION_FACTORS = {
   GLOBAL_AVERAGE: 0.475,
   
   // Regional factors (Thailand as primary focus per project rules)
-  THAILAND: 0.5216, // Thailand's grid emission factor (primary)
+  THAILAND: 0.4021, // Thailand's grid emission factor (primary)
   USA: 0.386,
   EU: 0.276,
   CHINA: 0.681,
@@ -25,7 +25,7 @@ export const EMISSION_FACTORS = {
   NUCLEAR: 0.012,
   
   // Default factor used in the application (Thailand as per project focus)
-  DEFAULT: 0.5216
+  DEFAULT: 0.4021
 }
 
 // CO2 calculation scopes based on GHG Protocol
