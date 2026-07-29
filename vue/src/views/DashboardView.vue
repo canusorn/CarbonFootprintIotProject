@@ -109,6 +109,10 @@
                     <span class="value">{{ sensorData.Va.toFixed(1) }}V</span>
                   </div>
                   <div class="detail">
+                    <span class="label">Va-b:</span>
+                    <span class="value">{{ Vab.toFixed(1) }}V</span>
+                  </div>
+                  <div class="detail">
                     <span class="label">Current:</span>
                     <span class="value">{{ sensorData.Ia.toFixed(2) }}A</span>
                   </div>
@@ -138,6 +142,10 @@
                     <span class="value">{{ sensorData.Vb.toFixed(1) }}V</span>
                   </div>
                   <div class="detail">
+                    <span class="label">Vb-c:</span>
+                    <span class="value">{{ Vbc.toFixed(1) }}V</span>
+                  </div>
+                  <div class="detail">
                     <span class="label">Current:</span>
                     <span class="value">{{ sensorData.Ib.toFixed(2) }}A</span>
                   </div>
@@ -165,6 +173,10 @@
                   <div class="detail">
                     <span class="label">Voltage:</span>
                     <span class="value">{{ sensorData.Vc.toFixed(1) }}V</span>
+                  </div>
+                  <div class="detail">
+                    <span class="label">Vc-a:</span>
+                    <span class="value">{{ Vca.toFixed(1) }}V</span>
                   </div>
                   <div class="detail">
                     <span class="label">Current:</span>
@@ -541,6 +553,22 @@ export default {
     const Pa_kW = computed(() => parseFloat(sensorData.value.Pa) || 0)
     const Pb_kW = computed(() => parseFloat(sensorData.value.Pb) || 0)
     const Pc_kW = computed(() => parseFloat(sensorData.value.Pc) || 0)
+
+    const Vab = computed(() => {
+      const Va = parseFloat(sensorData.value.Va) || 0
+      const Vb = parseFloat(sensorData.value.Vb) || 0
+      return Math.sqrt(Va * Va + Vb * Vb + Va * Vb)
+    })
+    const Vbc = computed(() => {
+      const Vb = parseFloat(sensorData.value.Vb) || 0
+      const Vc = parseFloat(sensorData.value.Vc) || 0
+      return Math.sqrt(Vb * Vb + Vc * Vc + Vb * Vc)
+    })
+    const Vca = computed(() => {
+      const Vc = parseFloat(sensorData.value.Vc) || 0
+      const Va = parseFloat(sensorData.value.Va) || 0
+      return Math.sqrt(Vc * Vc + Va * Va + Vc * Va)
+    })
 
     const energyA_kWh = computed(() => Pa_kW.value * 5 / 60)
     const energyB_kWh = computed(() => Pb_kW.value * 5 / 60)
@@ -2365,6 +2393,9 @@ export default {
       Pa_kW,
       Pb_kW,
       Pc_kW,
+      Vab,
+      Vbc,
+      Vca,
       energyA_kWh,
       energyB_kWh,
       energyC_kWh,
