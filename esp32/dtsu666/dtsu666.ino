@@ -58,6 +58,7 @@ String keyname[numVariables] = {
     "Et", "Ei", "Ee"};
 uint16_t timetoupdate = 0;
 uint8_t checkSubscribe = 0;
+unsigned long lastMqttConnection = 0;
 
 void connect()
 {
@@ -87,6 +88,7 @@ void connect()
   }
 
   Serial.println("\nconnected!");
+  lastMqttConnection = millis();
 
   client.subscribe(String(espid) + String("/#"));
   client.subscribe("control/" + String(espid));
@@ -176,6 +178,11 @@ void loop()
   client.loop();
   if (!client.connected())
   {
+    if (lastMqttConnection != 0 && millis() - lastMqttConnection >= 600000)
+    {
+      Serial.println("MQTT disconnected for 10 minutes, restarting ESP...");
+      ESP.restart();
+    }
     connect();
   }
 
