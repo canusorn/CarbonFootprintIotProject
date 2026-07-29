@@ -232,7 +232,7 @@
           <div class="power-chart-section">
             <div class="chart-header">
               <i class="pi pi-chart-line" style="color: #3498db;"></i>
-              <h3>Today's Power Consumption</h3>
+              <h3>Today's Energy Consumption</h3>
             </div>
             <div class="power-chart-container">
               <canvas ref="powerChartCanvas" id="powerChart"></canvas>
@@ -1143,19 +1143,19 @@ export default {
       // Prepare chart data from todayPowerData with time series format (no limit)
       const phaseAData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.Pa || 0
+        y: (item.Pa || 0) * 5 / 60
       }))
       const phaseBData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.Pb || 0
+        y: (item.Pb || 0) * 5 / 60
       }))
       const phaseCData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.Pc || 0
+        y: (item.Pc || 0) * 5 / 60
       }))
       const totalPowerData = todayPowerData.value.map(item => ({
         x: new Date(item.time),
-        y: item.totalPower || 0
+        y: (item.totalPower || 0) * 5 / 60
       }))
 
       try {
@@ -1175,7 +1175,7 @@ export default {
           data: {
             datasets: [
               {
-                label: 'Phase A',
+                label: 'Energy A',
                 data: phaseAData,
                 borderColor: '#e74c3c',
                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
@@ -1186,7 +1186,7 @@ export default {
                 clip: false
               },
               {
-                label: 'Phase B',
+                label: 'Energy B',
                 data: phaseBData,
                 borderColor: '#f39c12',
                 backgroundColor: 'rgba(243, 156, 18, 0.1)',
@@ -1197,7 +1197,7 @@ export default {
                 clip: false
               },
               {
-                label: 'Phase C',
+                label: 'Energy C',
                 data: phaseCData,
                 borderColor: '#0ea5e9',
                 backgroundColor: 'rgba(14, 165, 233, 0.1)',
@@ -1208,7 +1208,7 @@ export default {
                 clip: false
               },
               {
-                label: 'Total Power',
+                label: 'Total Energy',
                 data: totalPowerData,
                 borderColor: '#8e44ad',
                 backgroundColor: 'rgba(142, 68, 173, 0.1)',
@@ -1261,7 +1261,7 @@ export default {
               },
               title: {
                 display: true,
-                text: 'Today\'s Power Consumption by Phase',
+                text: 'Today\'s Energy Consumption by Phase (kWh)',
                 font: {
                   size: 16,
                   weight: 'bold'
@@ -1303,7 +1303,7 @@ export default {
                 display: true,
                 title: {
                   display: true,
-                  text: 'Power (kW)'
+                  text: 'Energy (kWh)'
                 },
                 beginAtZero: true
               }
