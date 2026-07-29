@@ -100,9 +100,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="Pa_kW" :readonly="true" :size="150" :min="0" :max="maxPa" 
-                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
-
+                  <Knob v-model="energyA_kWh" :readonly="true" :size="150" :min="0" :max="maxEnergyA" 
+                        :strokeWidth="10" valueColor="#3498db" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kWh'" />
                 </div>
                 <div class="phase-details">
                   <div class="detail">
@@ -117,6 +116,10 @@
                     <span class="label">PF:</span>
                     <span class="value">{{ sensorData.PFa.toFixed(2) }}</span>
                   </div>
+                  <div class="detail">
+                    <span class="label">Power:</span>
+                    <span class="value">{{ Pa_kW.toFixed(3) }} kW</span>
+                  </div>
                 </div>
               </div>
 
@@ -126,9 +129,8 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="Pb_kW" :readonly="true" :size="150" :min="0" :max="maxPb" 
-                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
-
+                  <Knob v-model="energyB_kWh" :readonly="true" :size="150" :min="0" :max="maxEnergyB" 
+                        :strokeWidth="10" valueColor="#e74c3c" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kWh'" />
                 </div>
                 <div class="phase-details">
                   <div class="detail">
@@ -143,6 +145,10 @@
                     <span class="label">PF:</span>
                     <span class="value">{{ sensorData.PFb.toFixed(2) }}</span>
                   </div>
+                  <div class="detail">
+                    <span class="label">Power:</span>
+                    <span class="value">{{ Pb_kW.toFixed(3) }} kW</span>
+                  </div>
                 </div>
               </div>
 
@@ -152,10 +158,9 @@
                   <i class="pi pi-circle-fill phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center;">
-                  <Knob v-model="Pc_kW" :readonly="true" :size="150" :min="0" :max="maxPc" 
-                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
+                  <Knob v-model="energyC_kWh" :readonly="true" :size="150" :min="0" :max="maxEnergyC" 
+                        :strokeWidth="10" valueColor="#f39c12" rangeColor="#ecf0f1" :valueTemplate="(val) => val.toFixed(3) + ' kWh'" />
                 </div>
-
                 <div class="phase-details">
                   <div class="detail">
                     <span class="label">Voltage:</span>
@@ -169,6 +174,10 @@
                     <span class="label">PF:</span>
                     <span class="value">{{ sensorData.PFc.toFixed(2) }}</span>
                   </div>
+                  <div class="detail">
+                    <span class="label">Power:</span>
+                    <span class="value">{{ Pc_kW.toFixed(3) }} kW</span>
+                  </div>
                 </div>
               </div>
 
@@ -178,10 +187,14 @@
                   <i class="pi pi-bolt phase-indicator"></i>
                 </div>
                 <div class="phase-value" style="display: flex; justify-content: center; align-items: center; margin-bottom: 16px;">
-                  <Knob v-model="totalPower" :readonly="true" :size="150" :min="0" :max="300" 
-                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" :valueTemplate="(val) => val.toFixed(3) + ' kW'" />
+                  <Knob v-model="energyTotal_kWh" :readonly="true" :size="150" :min="0" :max="maxEnergyTotal" 
+                        :strokeWidth="10" valueColor="#459611" rangeColor="#B5B5B5" :valueTemplate="(val) => val.toFixed(3) + ' kWh'" />
                 </div>
                 <div class="phase-details">
+                  <div class="detail">
+                    <span class="label">Total Power:</span>
+                    <span class="value">{{ totalPower.toFixed(3) }} kW</span>
+                  </div>
                   <div class="detail">
                     <span class="label">Today's Energy:</span>
                     <span class="value">{{ todayEnergyData.todayEnergy.toFixed(2) }} kWh</span>
@@ -529,6 +542,11 @@ export default {
     const Pb_kW = computed(() => parseFloat(sensorData.value.Pb) || 0)
     const Pc_kW = computed(() => parseFloat(sensorData.value.Pc) || 0)
 
+    const energyA_kWh = computed(() => Pa_kW.value * 5 / 60)
+    const energyB_kWh = computed(() => Pb_kW.value * 5 / 60)
+    const energyC_kWh = computed(() => Pc_kW.value * 5 / 60)
+    const energyTotal_kWh = computed(() => energyA_kWh.value + energyB_kWh.value + energyC_kWh.value)
+
     // Dynamic max values for knobs - auto-adjust when values exceed current max
     const maxPa = computed(() => {
       const currentValue = Pa_kW.value
@@ -545,6 +563,30 @@ export default {
     const maxPc = computed(() => {
       const currentValue = Pc_kW.value
       const defaultMax = 100
+      return currentValue > defaultMax ? currentValue : defaultMax
+    })
+
+    const maxEnergyA = computed(() => {
+      const currentValue = energyA_kWh.value
+      const defaultMax = 10
+      return currentValue > defaultMax ? currentValue : defaultMax
+    })
+
+    const maxEnergyB = computed(() => {
+      const currentValue = energyB_kWh.value
+      const defaultMax = 10
+      return currentValue > defaultMax ? currentValue : defaultMax
+    })
+
+    const maxEnergyC = computed(() => {
+      const currentValue = energyC_kWh.value
+      const defaultMax = 10
+      return currentValue > defaultMax ? currentValue : defaultMax
+    })
+
+    const maxEnergyTotal = computed(() => {
+      const currentValue = energyTotal_kWh.value
+      const defaultMax = 30
       return currentValue > defaultMax ? currentValue : defaultMax
     })
 
@@ -2323,6 +2365,10 @@ export default {
       Pa_kW,
       Pb_kW,
       Pc_kW,
+      energyA_kWh,
+      energyB_kWh,
+      energyC_kWh,
+      energyTotal_kWh,
       totalPower,
       totalCO2,
       dailyCO2,
@@ -2331,6 +2377,10 @@ export default {
       maxPa,
       maxPb,
       maxPc,
+      maxEnergyA,
+      maxEnergyB,
+      maxEnergyC,
+      maxEnergyTotal,
       energyVsCO2ChartData,
       energyVsCO2ChartOptions,
       connectionStatus,
