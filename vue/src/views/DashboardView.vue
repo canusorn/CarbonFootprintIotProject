@@ -706,7 +706,10 @@ export default {
       const clientId = `WEB${timestamp}_${espId.value}`
 
       try {
-        mqttClient.value = mqtt.connect('ws://' + import.meta.env.VITE_HOSTURL + ':8083', {
+        // Full WS URL override (e.g. wss://mqtt.example.com behind nginx)
+        // Falls back to direct connection ws://<VITE_HOSTURL>:8083
+        const mqttUrl = import.meta.env.VITE_MQTTURL || ('ws://' + import.meta.env.VITE_HOSTURL + ':8083')
+        mqttClient.value = mqtt.connect(mqttUrl, {
           clientId: clientId,
           clean: true,
           connectTimeout: 4000,
@@ -2359,7 +2362,7 @@ export default {
     const fetchESPDeviceStatus = async () => {
       try {
         const token = localStorage.getItem('token')
-        const response = await fetch(`http://${import.meta.env.VITE_HOSTURL}:3000/api/devices/${espId.value}/status`, {
+        const response = await fetch(`${import.meta.env.VITE_SERVERURL}/api/devices/${espId.value}/status`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
