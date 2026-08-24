@@ -1,0 +1,28 @@
+🔄 Initializing MySQL databases...
+📍 Connecting to MySQL at localhost:3306
+📊 Main Database: carbon_footprint_db
+📊 Sensor Database: sensor
+👤 User: pi
+❌ Database initialization failed (attempt 1): 
+⏳ Retrying in 1 seconds... (1/10)
+🔄 Initializing MySQL databases...
+📍 Connecting to MySQL at localhost:3306
+📊 Main Database: carbon_footprint_db
+📊 Sensor Database: sensor
+👤 User: pi
+❌ Database initialization failed (attempt 2): 
+⏳ Retrying in 2 seconds... (2/10)
+🔄 Initializing MySQL databases...
+📍 Connecting to MySQL at localhost:3306
+📊 Main Database: carbon_footprint_db
+📊 Sensor Database: sensor
+👤 User: pi
+❌ Database initialization failed (attempt 3): 
+⏳ Retrying in 4 seconds... (3/10)
+🔄 Initializing MySQL databases...
+📍 Connecting to MySQL at localhost:3306
+📊 Main Database: carbon_footprint_db
+📊 Sensor Database: sensor
+👤 User: pi
+❌ Database initialization failed (attempt 4): 
+⏳ Retrying in 8 seconds... (4/10)
