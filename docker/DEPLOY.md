@@ -8,6 +8,7 @@ Stack (all official images, code bind-mounted from the host):
 | db | `mysql:8.4` | — (3306 optional) | named volume `db_data` |
 | api | `node:22-alpine` | 3000, 1883, 8083 | `./node/` (source code) |
 | web | `nginx:1.27-alpine` | 8080 | `./vue/dist/` (build output) |
+| phpmyadmin | `phpmyadmin:latest` | 8081 | — (ephemeral session storage) |
 
 Why **1883** is exposed directly:
 
@@ -115,12 +116,16 @@ Notes:
   (`DashboardView.vue`) — so `MQTT_PASSWORD` in `.env` must be `pi` unless
   you change that code. ESP32 firmware must use the same password.
 - ESP32 firmware must point at `<server-ip>:1883`.
+- phpMyAdmin runs at `http://<server-ip>:8081` (login: `root` +
+  `MYSQL_ROOT_PASSWORD`). It has full control of both databases — on a public
+  server, proxy it through NPM with an Access List and drop the direct port.
 
 ## 5. Verify
 
 ```bash
 curl http://localhost:3000/api/health     # API + DB status
 curl http://localhost:8080/               # frontend
+# phpMyAdmin UI: http://<server-ip>:8081 (root + MYSQL_ROOT_PASSWORD)
 docker compose exec db mysql -u root -p$MYSQL_ROOT_PASSWORD -e "SHOW DATABASES;"
 ```
 

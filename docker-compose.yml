@@ -128,6 +128,25 @@ services:
       web-builder:
         condition: service_completed_successfully
 
+  # ---------------------------------------------------------------------------
+  # phpMyAdmin — web UI for MySQL (https://www.phpmyadmin.net)
+  # URL: http://<server-ip>:8081 — login: root + MYSQL_ROOT_PASSWORD
+  # On a public server, prefer proxying it through NPM with an Access List
+  # instead of exposing this port directly (root = full DB control).
+  # ---------------------------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db # service name on the compose network
+      UPLOAD_LIMIT: 64M # allows importing large SQL dumps
+    ports:
+      - "8081:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
 # NPM proxy hosts to create in the UI (http://<server-ip>:81):
 #   app.yourdomain.com  -> web  : 80   (+ Let's Encrypt)
 #   api.yourdomain.com  -> api  : 3000 (+ Let's Encrypt)
