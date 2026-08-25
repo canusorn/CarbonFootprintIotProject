@@ -178,11 +178,11 @@ class SensorService {
     const selectQuery = `
       SELECT * FROM \`${tableName}\`
       ORDER BY created_at DESC
-      LIMIT ?
+      LIMIT ${parseInt(limit) || 100}
     `;
 
     try {
-      const [rows] = await this.connection.execute(selectQuery, [limit]);
+      const [rows] = await this.connection.execute(selectQuery);
       return rows;
     } catch (error) {
       if (error.code === 'ER_NO_SUCH_TABLE') {
@@ -212,10 +212,10 @@ class SensorService {
         SELECT * FROM \`${tableName}\`
         WHERE time >= ? AND time <= ?
         ORDER BY time ASC
-        LIMIT ?
+        LIMIT ${parseInt(limit) || 50000}
       `;
 
-      const [rows] = await this.connection.execute(selectQuery, [startDate, endDate, limit]);
+      const [rows] = await this.connection.execute(selectQuery, [startDate, endDate]);
       
       console.log(`✅ Retrieved ${rows.length} records for ESP: ${espId}`);
       return rows;
